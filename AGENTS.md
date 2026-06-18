@@ -228,7 +228,7 @@ def load_board(...) -> Board:
   (`pinMode`, `digitalWrite`, `digitalRead`, `analogRead`, `analogWrite`,
   `tone`, `noTone`, `pulseIn`, `shiftOut`, `shiftIn`).
 - Constants mirror Arduino (`INPUT`, `OUTPUT`, `INPUT_PULLUP`, `HIGH`, `LOW`,
- `LSBFIRST`, `MSBFIRST`, and analog pins `A0`-`A7`); typed via `PinMode` /
+ `LSBFIRST`, `MSBFIRST`, and analog pins `A0`-`A20`); typed via `PinMode` /
  `DigitalValue` / `BitOrder` (`Literal`) aliases.
 - Host-side timing (`delay`, `delayMicroseconds`, `millis`, `micros`) are
   **`Board` methods** that run on the Python host; `millis`/`micros` count from

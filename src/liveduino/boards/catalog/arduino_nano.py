@@ -1,10 +1,18 @@
-"""Arduino Nano board."""
+"""Arduino Nano board.
+
+Board definition for the Arduino Nano (ATmega328), controlled over USB serial
+running StandardFirmata.
+"""
 
 from liveduino.boards.board import Board
 
 
 class ArduinoNano(Board):
-    """Arduino Nano (ATmega328) over USB serial running StandardFirmata."""
+    """Arduino Nano (ATmega328) over USB serial running StandardFirmata.
+
+    ATmega328 board with 14 digital pins and 8 analog inputs (A6 and A7 are
+    analog-only); PWM is available on pins 3, 5, 6, 9, 10, and 11.
+    """
     id = "arduino:nano"
     name = "Arduino Nano"
     digital_pins = range(14)

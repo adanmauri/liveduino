@@ -1,4 +1,8 @@
-"""Board base class, registry, and catalog."""
+"""Board base class, registry, and catalog.
+
+Public entry point for the board layer: re-exports the ``Board`` base class and
+the registry helpers used to discover and look up boards by id or name.
+"""
 
 from liveduino.boards.board import Board
 from liveduino.boards.registry import (

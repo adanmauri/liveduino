@@ -1,4 +1,9 @@
-"""Shared test helpers."""
+"""In-memory ProtocolClient stand-in for unit tests.
+
+Provides a ``ProtocolClient`` implementation that records calls and stores pin
+state in memory, letting board-level unit tests run without a real protocol or
+driver.
+"""
 
 from __future__ import annotations
 
@@ -8,7 +13,11 @@ from liveduino.types import BitOrder, DigitalValue, PinMode
 
 
 class MockProtocol:
-    """In-memory ProtocolClient stand-in for unit tests."""
+    """In-memory ProtocolClient stand-in for unit tests.
+
+    Records every protocol call and keeps the latest pin modes and values in
+    memory so board-level tests can assert on the commands the board issued.
+    """
     def __init__(self) -> None:
         self.connected = False
         self.modes: dict[int, int] = {}

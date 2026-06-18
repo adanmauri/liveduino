@@ -13,7 +13,7 @@ Open a clean, review-ready pull request from the current branch using a clear su
 
 1. Validate repository state:
    - `git status --short --branch`
-   - Confirm current branch is not `main`/`master`.
+   - Confirm current branch is not `main`.
 2. Understand PR scope:
    - `git log --oneline origin/main...HEAD`
    - `git diff --stat origin/main...HEAD`
@@ -43,7 +43,7 @@ Open a clean, review-ready pull request from the current branch using a clear su
 
 ## Safety Rules
 
-- Never open PR from `main` or `master`.
+- Never open PR from `main`.
 - Never force push unless explicitly requested.
 - Do not change git config.
 - Prefer MCP over `gh` for GitHub operations.

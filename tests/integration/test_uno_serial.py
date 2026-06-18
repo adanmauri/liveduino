@@ -1,4 +1,8 @@
-"""Opt-in integration tests requiring a connected Arduino UNO."""
+"""Opt-in integration tests requiring a connected Arduino UNO.
+
+Drive a real Arduino UNO over the serial port given by ``LIVEDUINO_PORT``,
+blinking a digital pin and reading an analog input; skipped when unset.
+"""
 
 import os
 

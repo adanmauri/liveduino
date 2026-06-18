@@ -1,4 +1,8 @@
-"""Serial byte channel driver."""
+"""Serial byte channel driver.
+
+Driver implementation that moves Firmata bytes over a USB/serial port using
+pyserial. It is the default transport for boards connected over USB.
+"""
 
 from __future__ import annotations
 
@@ -9,7 +13,11 @@ from liveduino.exceptions import BoardConnectionError
 
 
 class SerialDriver(Driver):
-    """USB/serial driver backed by pyserial."""
+    """USB/serial driver backed by pyserial.
+
+    Opens a serial port at the configured baud rate and exposes the ``Driver``
+    interface, translating pyserial errors into ``BoardConnectionError``.
+    """
     def __init__(self, port: str, *, baud: int = 57600, timeout: float | None = None) -> None:
         self._port = port
         self._baud = baud

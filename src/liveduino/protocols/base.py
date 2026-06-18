@@ -1,4 +1,9 @@
-"""Protocol layer abstractions."""
+"""Protocol layer abstractions.
+
+Defines the ``ProtocolClient`` protocol implemented by every host-to-board
+protocol. A protocol client encodes the board API into wire commands and decodes
+incoming reports, sitting between the board and the driver.
+"""
 
 from typing import Protocol
 
@@ -6,7 +11,12 @@ from liveduino.types import BitOrder, DigitalValue, PinMode
 
 
 class ProtocolClient(Protocol):
-    """Command encoder/decoder for a host-to-board protocol."""
+    """Command encoder/decoder for a host-to-board protocol.
+
+    Structural protocol that translates the board API (pin modes, reads, and
+    writes) into the wire format understood by the firmware, and parses the
+    responses returned over the driver.
+    """
     def connect(self) -> None:
         """Establish the protocol session with the board."""
         ...

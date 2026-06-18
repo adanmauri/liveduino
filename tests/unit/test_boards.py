@@ -1,4 +1,8 @@
-"""Unit tests for boards and the registry."""
+"""Unit tests for boards and the registry.
+
+Exercise the board catalog and registry: auto-discovery, lookup by id and name,
+per-board capabilities, and validation of required class attributes.
+"""
 
 import pytest
 

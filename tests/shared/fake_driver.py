@@ -1,10 +1,18 @@
-"""In-memory Driver stand-in for unit tests."""
+"""In-memory Driver stand-in for unit tests.
+
+Provides a ``Driver`` implementation backed by in-memory buffers so unit tests
+can capture written bytes and inject bytes to be read, with no real I/O.
+"""
 
 from __future__ import annotations
 
 
 class FakeDriver:
-    """Driver backed by in-memory buffers for write capture and read injection."""
+    """Driver backed by in-memory buffers for write capture and read injection.
+
+    Records every byte written for later assertions and returns bytes queued via
+    ``feed`` from subsequent reads, mimicking a connected board without hardware.
+    """
     def __init__(self) -> None:
         self.opened = False
         self.written = bytearray()

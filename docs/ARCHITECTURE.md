@@ -29,7 +29,7 @@ driver.
 
 | Path | Role |
 |------|------|
-| `src/liveduino/constants.py` | Arduino constants (`HIGH`, `LOW`, `INPUT`, …, and analog pins `A0`-`A7`) |
+| `src/liveduino/constants.py` | Arduino constants (`HIGH`, `LOW`, `INPUT`, …, and analog pins `A0`-`A20`) |
 | `src/liveduino/types.py` | Arduino value types (`PinMode`, `DigitalValue`, `BitOrder`) |
 | `src/liveduino/utilities.py` | Host value utilities (`map_range`, `constrain`) |
 | `src/liveduino/boards/board.py` | `Board` abstract base class (Arduino API incl. host timing, pin map, capabilities, `connect`) |
@@ -54,7 +54,7 @@ driver.
 
 ## Analog pins
 
-Analog pins follow the Arduino `A0`-`A7` constants, modelled as a small
+Analog pins follow the Arduino `A0`-`A20` constants, modelled as a small
 board-agnostic `AnalogPin` value type that carries only the analog channel
 (`A0` is channel 0, …). The numeric digital pin of `A0` is board-specific
 (14 on the ATmega328 family, 54 on the Mega), so each board resolves the
@@ -63,8 +63,11 @@ constant itself: `analogRead` reads `AnalogPin.channel`, while digital ops
 `first_analog_pin` (`first_analog_pin + channel`). `analogRead` also accepts a
 raw channel (`analogRead(0)` == `analogRead(A0)`). Channels listed in
 `analog_only_pins` (e.g. `{6, 7}` on the 8-channel Nano/Mini/Pro Mini/Fio)
-reject digital use. A board with a non-contiguous analog map can override the
-translation without touching the public API or the constants.
+reject digital use. The linear `first_analog_pin + channel` rule covers
+contiguous maps (e.g. `first_analog_pin = 54` on the Mega), but a board with a
+non-contiguous analog map — such as the ATmega32U4 (Leonardo/Micro), where
+channels A6-A11 land on scattered digital pins — can override the translation
+without touching the public API or the constants.
 
 Boards may also declare `reserved_pins`: digital pins wired to onboard hardware
 (e.g. pins 10-13 on the Arduino Ethernet, used by the W5100 over SPI). Any I/O

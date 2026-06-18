@@ -1,4 +1,8 @@
-"""TCP socket driver (Firmata over WiFi/Ethernet)."""
+"""TCP socket driver (Firmata over WiFi/Ethernet).
+
+Driver implementation that carries Firmata bytes over a TCP connection, used
+with StandardFirmataWiFi or StandardFirmataEthernet sketches.
+"""
 
 from __future__ import annotations
 
@@ -8,7 +12,11 @@ from liveduino.drivers.socket_driver import SocketDriver
 
 
 class TcpDriver(SocketDriver):
-    """Firmata driver over a TCP socket (StandardFirmataWiFi/Ethernet)."""
+    """Firmata driver over a TCP socket (StandardFirmataWiFi/Ethernet).
+
+    Connects to the board's host and port and reuses the buffered, non-blocking
+    socket I/O provided by ``SocketDriver``.
+    """
     def __init__(self, host: str, port: int = 3030, *, timeout: float | None = None) -> None:
         super().__init__()
         self._host = host

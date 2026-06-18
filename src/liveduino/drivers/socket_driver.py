@@ -1,4 +1,9 @@
-"""Socket-based driver base class."""
+"""Socket-based driver base class.
+
+Shared implementation for stream-socket drivers (TCP, Bluetooth). It provides
+buffered, non-blocking reads and leaves socket creation and endpoint
+description to subclasses.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +15,12 @@ _READ_CHUNK = 1024
 
 
 class SocketDriver:
-    """Base driver over a stream socket with buffered non-blocking reads."""
+    """Base driver over a stream socket with buffered non-blocking reads.
+
+    Handles the common open/close/read/write logic for socket transports and
+    delegates the actual socket creation and a human-readable description to
+    subclasses via ``_open_socket`` and ``_describe``.
+    """
     def __init__(self) -> None:
         self._socket: socket.socket | None = None
         self._buffer = bytearray()

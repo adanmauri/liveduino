@@ -1,4 +1,8 @@
-"""Unit tests for BluetoothDriver."""
+"""Unit tests for BluetoothDriver.
+
+Exercise the RFCOMM socket driver with a mocked socket, covering open, buffered
+reads and writes, timeouts, unsupported platforms, and connection failures.
+"""
 
 from unittest.mock import MagicMock, patch
 

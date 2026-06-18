@@ -1,10 +1,18 @@
-"""Arduino Mini board."""
+"""Arduino Mini board.
+
+Board definition for the Arduino Mini (ATmega328), controlled over a serial link
+running StandardFirmata.
+"""
 
 from liveduino.boards.board import Board
 
 
 class ArduinoMini(Board):
-    """Arduino Mini (ATmega328) over serial running StandardFirmata."""
+    """Arduino Mini (ATmega328) over serial running StandardFirmata.
+
+    ATmega328 board with 14 digital pins and 8 analog inputs (A6 and A7 are
+    analog-only); PWM is available on pins 3, 5, 6, 9, 10, and 11.
+    """
     id = "arduino:mini"
     name = "Arduino Mini"
     digital_pins = range(14)

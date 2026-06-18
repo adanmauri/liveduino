@@ -1,4 +1,8 @@
-"""Unit tests for SerialDriver."""
+"""Unit tests for SerialDriver.
+
+Exercise the pyserial-backed driver with a mocked serial port, covering open,
+close, read, write, error handling, and idempotent reopen.
+"""
 
 from unittest.mock import MagicMock, patch
 

@@ -1,6 +1,6 @@
 # Live Wiring commands from Python
 
-**Liveduino** lets you control microcontroller boards from Python using the exact same API as the Arduino/Wiring language. Send `pinMode`, `digitalWrite`, and `analogRead` in realtime — each command executes on the board instantly, like the original [Frameduino](legacy/) vision, but for Python 3.13 and multiple boards.
+**Liveduino** lets you control microcontroller boards from Python using the exact same API as the Arduino/Wiring language. It's interactive, like a REPL or shell for your board: every `pinMode`, `digitalWrite`, or `analogRead` you call is sent and executed on the hardware right away — no compile, no upload, no flashing. Type a command in a Python shell and the LED blinks; read a pin and you get the live value back. This realtime, line-by-line control is the original [Frameduino](legacy/) vision, now for Python 3.13 and multiple boards.
 
 This is **not** MicroPython (Python on the chip), **not** a sketch compiler, and **not** a new API like pyFirmata's pin objects. If you know Arduino, you already know liveduino.
 
@@ -43,7 +43,7 @@ val = board.analogRead(A0)  # same as analogRead(0); returns 0-1023
 board.close()
 ```
 
-Analog pins use the Arduino `A0`-`A7` constants. They are board-agnostic
+Analog pins use the Arduino `A0`-`A20` constants. They are board-agnostic
 (each carries only its analog channel), so the same `A0` works on any board and
 the board maps it to the right pin. `analogRead(A0)` equals `analogRead(0)`, and
 where the hardware allows it `A0`-`A5` double as digital pins
