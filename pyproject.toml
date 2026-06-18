@@ -38,9 +38,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/adanmauri/frameduino"
-Repository = "https://github.com/adanmauri/frameduino"
-Issues = "https://github.com/adanmauri/frameduino/issues"
+Homepage = "https://github.com/adanmauri/liveduino"
+Repository = "https://github.com/adanmauri/liveduino"
+Issues = "https://github.com/adanmauri/liveduino/issues"
 
 [dependency-groups]
 dev = [
