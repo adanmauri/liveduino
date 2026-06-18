@@ -1,0 +1,133 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "liveduino"
+version = "0.1.0"
+description = "Live Wiring commands from Python to your microcontroller"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Adán Mauri Ungaro", email = "adan.mauri@gmail.com" },
+]
+keywords = [
+    "arduino",
+    "wiring",
+    "firmata",
+    "microcontroller",
+    "serial",
+    "gpio",
+    "electronics",
+    "hardware",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Hardware",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pyserial>=3.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/adanmauri/frameduino"
+Repository = "https://github.com/adanmauri/frameduino"
+Issues = "https://github.com/adanmauri/frameduino/issues"
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.4",
+    "black>=26.5.1",
+    "flake8>=7.3.0",
+    "isort>=8.0.1",
+    "mypy>=2.1.0",
+    "pre-commit>=4.6.0",
+    "pylint>=4.0.6",
+    "pyright>=1.1.410",
+    "pytest>=9.1.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.17",
+]
+
+[tool.uv]
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/liveduino"]
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pyright]
+pythonVersion = "3.13"
+reportIncompatibleVariableOverride = "none"
+
+[tool.pylint.main]
+ignore-paths = ["^tests/"]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.similarities]
+min-similarity-lines = 40
+
+[tool.pylint.messages_control]
+disable = [
+    "too-few-public-methods",
+    "invalid-name",
+    "unnecessary-ellipsis",
+    "global-statement",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "SIM"]
+
+[tool.mypy]
+python_version = "3.13"
+explicit_package_bases = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+ignore_missing_imports = true
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+addopts = "-ra"
+markers = [
+    "unit: pure logic, no hardware",
+    "integration: requires Arduino connected (LIVEDUINO_PORT)",
+    "slow: tests that are slow to run",
+]
+
+[tool.coverage.run]
+source = ["src/liveduino"]
+
+[tool.coverage.report]
+exclude_also = [
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+
+# Flake8 configuration lives in .flake8 (flake8 does not read pyproject.toml).
