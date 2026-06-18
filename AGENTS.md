@@ -10,7 +10,8 @@ well tested, and faithful to the Arduino/Wiring API.
 
 **Liveduino** is a Python 3.13 library that controls microcontrollers from the
 host using the **Arduino/Wiring API** (`pinMode`, `digitalWrite`, `analogRead`,
-…). It is the spiritual successor to **Frameduino** (see `legacy/`).
+…). It is the spiritual successor to **Frameduino**
+(see [github.com/adanmauri/frameduino](https://github.com/adanmauri/frameduino)).
 
 - **MVP**: Arduino UNO with **StandardFirmata**, driven by a **native**
   `FirmataProtocol` (the Firmata 2.x wire protocol is implemented in-house over a
@@ -20,7 +21,7 @@ host using the **Arduino/Wiring API** (`pinMode`, `digitalWrite`, `analogRead`,
   semantics, just in Python.
 - **Not in scope**: running Python on the MCU, compiling sketches, or exposing
   Firmata wire details to users.
-- **Repo**: GitHub `frameduino`; PyPI package **`liveduino`**.
+- **Repo**: GitHub `liveduino`; PyPI package **`liveduino`**.
 
 For the full picture, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -39,7 +40,6 @@ src/liveduino/
 ├── drivers/        # SerialDriver, TcpDriver, BluetoothDriver (SocketDriver base)
 └── connection.py   # connect("arduino:uno", port)
 firmware/           # MCU setup docs / future firmware
-legacy/             # Frameduino 0.x (Python 2)
 tests/unit/         # mocks, @pytest.mark.unit
 tests/integration/  # hardware, @pytest.mark.integration, LIVEDUINO_PORT
 ```
@@ -337,4 +337,4 @@ After implementation, **summarize the changes made and any residual risks**.
 - [README.md](README.md)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [firmware/arduino/README.md](firmware/arduino/README.md)
-- [legacy/](legacy/) — original Frameduino
+- [github.com/adanmauri/frameduino](https://github.com/adanmauri/frameduino) — original Frameduino

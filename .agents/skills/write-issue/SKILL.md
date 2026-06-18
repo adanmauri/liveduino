@@ -1,11 +1,11 @@
 ---
 name: write-issue
-description: Create or update a GitHub issue for liveduino (adanmauri/frameduino) with a clear report and hardware/environment context ($ARGUMENTS optional title, context, or issue number/URL).
+description: Create or update a GitHub issue for liveduino (adanmauri/liveduino) with a clear report and hardware/environment context ($ARGUMENTS optional title, context, or issue number/URL).
 ---
 
 # Write GitHub Issue
 
-Create a GitHub issue in **adanmauri/frameduino** (PyPI package `liveduino`).
+Create a GitHub issue in **adanmauri/liveduino** (PyPI package `liveduino`).
 $ARGUMENTS is optional: a title hint, a bug/feature description, or an existing
 issue number/URL to **update** (not create a duplicate).
 

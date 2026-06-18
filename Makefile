@@ -19,7 +19,7 @@ endef
 .PHONY: help install install-dev clean clean-cache clean-deps \
 	test test-unit test-integration test-coverage \
 	lint type-check security quality format format-quality check pre-commit build \
-	src tests legacy docs
+	src tests docs
 
 # Default target
 help:
@@ -172,6 +172,6 @@ pre-commit:
 	$(call ECHO_OK,OK: pre-commit hooks passed.)
 
 # Catch-all so a second goal used as a path (e.g. `make lint src`) is not built as a target.
-.SILENT: src tests legacy docs
+.SILENT: src tests docs
 %:
 	@:

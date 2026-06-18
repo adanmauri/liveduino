@@ -39,7 +39,7 @@ driver.
 | `src/liveduino/drivers/` | Byte channels: `SerialDriver`, `TcpDriver`, `BluetoothDriver` (shared `SocketDriver` base) |
 | `src/liveduino/connection.py` | Factory `connect("arduino:uno", port)` |
 | `firmware/` | Setup docs and future MCU firmware (Pinguino live interpreter) |
-| `legacy/` | Frameduino 0.x Python 2 code and original Pinguino `.pde` |
+| [github.com/adanmauri/frameduino](https://github.com/adanmauri/frameduino) | Original Frameduino 0.x Python 2 code and Pinguino `.pde` |
 
 ## MVP data flow (Arduino UNO)
 
@@ -89,7 +89,7 @@ on a reserved pin (digital or PWM) raises `InvalidPinError`.
 
 ## Future: Pinguino
 
-Pinguino boards will use **LiveProtocol**: a text command interpreter evolved from `legacy/pinguino/usb_interpreter.pde`, with explicit framing and a `LIVE V1` handshake. The same `Board` API will apply; a Pinguino board subclass just overrides `protocol_factory` to build the new protocol client.
+Pinguino boards will use **LiveProtocol**: a text command interpreter evolved from the original [Frameduino](https://github.com/adanmauri/frameduino) `pinguino/usb_interpreter.pde`, with explicit framing and a `LIVE V1` handshake. The same `Board` API will apply; a Pinguino board subclass just overrides `protocol_factory` to build the new protocol client.
 
 ## Testing
 
