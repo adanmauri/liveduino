@@ -1,4 +1,4 @@
-# AI Agents Guidelines — Liveduino
+# AI Agents Guidelines: Liveduino
 
 ## Overview
 
@@ -17,7 +17,7 @@ host using the **Arduino/Wiring API** (`pinMode`, `digitalWrite`, `analogRead`,
   `FirmataProtocol` (the Firmata 2.x wire protocol is implemented in-house over a
   `Driver`; no third-party Firmata library). Works over USB serial, TCP/WiFi,
   or Bluetooth RFCOMM by swapping the driver.
-- **Goal**: zero learning curve for Arduino users — same function names and
+- **Goal**: zero learning curve for Arduino users, same function names and
   semantics, just in Python.
 - **Not in scope**: running Python on the MCU, compiling sketches, or exposing
   Firmata wire details to users.
@@ -99,6 +99,8 @@ driver internals through public exports.
 - **All comments and messages must be in English**
 - **Logs must not use emojis** - Use plain text messages only
 - **Error messages and user-facing text must be in English**
+- **Do not use the em dash character (`—`)** - In docs, comments, commit
+  messages, and any text, use a comma, colon, parentheses, or a period instead
 
 ### Python Version and Type Hints
 
@@ -286,9 +288,9 @@ def load_board(...) -> Board:
   no real serial. Use mocks (`tests/shared/`).
 - **Integration tests** (`tests/integration/`, `@pytest.mark.integration`):
   require a real board via the `LIVEDUINO_PORT` environment variable.
-- **Tests must only test public methods and attributes** — do not test private
+- **Tests must only test public methods and attributes**: do not test private
   methods (those starting with `_`) or internal implementation details.
-- **Tests must follow the same style guide** — same code style, docstrings, type
+- **Tests must follow the same style guide**: same code style, docstrings, type
   hints, and formatting as the rest of the codebase.
 - **`make test-coverage` requires 100% line coverage** on `src/liveduino/`
   (unit tests). Add or extend unit tests when touching uncovered code paths.
@@ -329,7 +331,7 @@ After implementation, **summarize the changes made and any residual risks**.
 ### 2. Hardware Safety
 
 - Treat the serial port and connected board as shared, stateful resources; always close connections cleanly
-- Never assume a board is present in unit tests — hardware access belongs to integration tests (`LIVEDUINO_PORT`)
+- Never assume a board is present in unit tests; hardware access belongs to integration tests (`LIVEDUINO_PORT`)
 - Validate pins, modes, and values before sending commands to the device
 
 ## References
@@ -337,4 +339,4 @@ After implementation, **summarize the changes made and any residual risks**.
 - [README.md](README.md)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [firmware/arduino/README.md](firmware/arduino/README.md)
-- [github.com/adanmauri/frameduino](https://github.com/adanmauri/frameduino) — original Frameduino
+- [github.com/adanmauri/frameduino](https://github.com/adanmauri/frameduino) (original Frameduino)

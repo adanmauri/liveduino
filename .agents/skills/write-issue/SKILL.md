@@ -18,14 +18,14 @@ or instead of coding, or wants to update an existing one.
 
 1. **Existing issue?** If $ARGUMENTS is `#42` or an issue URL, fetch it with
    GitHub MCP (`user-github`) or `gh issue view`, and use `gh issue edit` only
-   when the user asked to update — never create a duplicate.
+   when the user asked to update, never create a duplicate.
 
 2. **Classify the issue** and shape the body accordingly:
-   - **bug** — what happened vs. expected, minimal repro, traceback, the
+   - **bug**: what happened vs. expected, minimal repro, traceback, the
      `liveduino.exceptions` type raised (if any).
-   - **enhancement** — motivation, proposed API (keep Arduino/Wiring fidelity),
+   - **enhancement**: motivation, proposed API (keep Arduino/Wiring fidelity),
      alternatives.
-   - **documentation** — which doc (`README.md`, `docs/ARCHITECTURE.md`,
+   - **documentation**: which doc (`README.md`, `docs/ARCHITECTURE.md`,
      `firmware/*/README.md`) and what is missing or wrong.
 
 3. **Gather environment context** for bugs that touch hardware/connection. Run
@@ -45,10 +45,10 @@ or instead of coding, or wants to update an existing one.
      port or host:port / MAC, and baud rate.
    - **Firmware**: StandardFirmata variant and version flashed on the board.
 
-4. **Pick a title** — short, action-oriented (from $ARGUMENTS or conversation),
+4. **Pick a title**: short, action-oriented (from $ARGUMENTS or conversation),
    e.g. `analogRead returns stale value on Nano over TCP`.
 
-5. **Fill the [issue template](./template)** — keep the **Environment** table for
+5. **Fill the [issue template](./template)**: keep the **Environment** table for
    hardware/connection bugs; drop it for docs-only or pure host-logic issues.
    Write the filled body to a scratch file that is gitignored (`issue-draft.tmp`).
 

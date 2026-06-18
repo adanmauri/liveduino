@@ -13,7 +13,7 @@
 | Field | Value |
 | --- | --- |
 | **liveduino version** | <!-- `uv run python -c "import importlib.metadata as m; print(m.version('liveduino'))"` --> |
-| **Python version** | <!-- 3.13.x — `python --version` --> |
+| **Python version** | <!-- 3.13.x, `python --version` --> |
 | **pyserial version** | <!-- `uv run python -c "import serial; print(serial.__version__)"` --> |
 | **Host OS** | <!-- macOS / Linux / Windows + version (`uname -srm` / `sw_vers`) --> |
 | **Board** | <!-- e.g. Arduino UNO (`arduino:uno`), Nano (`arduino:nano`) --> |

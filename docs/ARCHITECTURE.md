@@ -43,14 +43,14 @@ driver.
 
 ## MVP data flow (Arduino UNO)
 
-1. `ArduinoUno()` picks the board's protocol (`FirmataProtocol` by default; override at instantiation with `ArduinoUno(protocol=...)`). `.connect(port)` then builds a `SerialDriver(port)` — or uses the `driver=TcpDriver(...)` / `driver=BluetoothDriver(...)` you pass — wraps it in the chosen protocol, and opens the connection. The **protocol** is a property of the board instance; the **driver** is how it is connected.
+1. `ArduinoUno()` picks the board's protocol (`FirmataProtocol` by default; override at instantiation with `ArduinoUno(protocol=...)`). `.connect(port)` then builds a `SerialDriver(port)` (or uses the `driver=TcpDriver(...)` / `driver=BluetoothDriver(...)` you pass), wraps it in the chosen protocol, and opens the connection. The **protocol** is a property of the board instance; the **driver** is how it is connected.
 2. `board.pinMode(13, OUTPUT)` validates pin 13 against the `ArduinoUno` pin map, then calls `protocol.pin_mode`.
 3. `FirmataProtocol` encodes a `SET_PIN_MODE` Firmata message and writes the bytes to the driver. Inbound digital/analog reports are decoded by a small synchronous parser pumped on each read.
 4. StandardFirmata on the UNO executes the command on the hardware.
 
 ## Host-side time
 
-`board.delay()`, `board.delayMicroseconds()`, `board.millis()`, and `board.micros()` run on the **host Python process**, not on the microcontroller — matching Frameduino and Johnny-Five semantics. `millis`/`micros` count from the moment the board connection was created. The pure value helpers `map_range` and `constrain` are module-level functions (`from liveduino import map_range, constrain`).
+`board.delay()`, `board.delayMicroseconds()`, `board.millis()`, and `board.micros()` run on the **host Python process**, not on the microcontroller, matching Frameduino and Johnny-Five semantics. `millis`/`micros` count from the moment the board connection was created. The pure value helpers `map_range` and `constrain` are module-level functions (`from liveduino import map_range, constrain`).
 
 ## Analog pins
 
@@ -65,8 +65,8 @@ raw channel (`analogRead(0)` == `analogRead(A0)`). Channels listed in
 `analog_only_pins` (e.g. `{6, 7}` on the 8-channel Nano/Mini/Pro Mini/Fio)
 reject digital use. The linear `first_analog_pin + channel` rule covers
 contiguous maps (e.g. `first_analog_pin = 54` on the Mega), but a board with a
-non-contiguous analog map — such as the ATmega32U4 (Leonardo/Micro), where
-channels A6-A11 land on scattered digital pins — can override the translation
+non-contiguous analog map, such as the ATmega32U4 (Leonardo/Micro) where
+channels A6-A11 land on scattered digital pins, can override the translation
 without touching the public API or the constants.
 
 Boards may also declare `reserved_pins`: digital pins wired to onboard hardware
