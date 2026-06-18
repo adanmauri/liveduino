@@ -1,0 +1,46 @@
+---
+name: Tests
+
+on: # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit-coverage:
+    name: Unit tests + coverage gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup uv (with cache)
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run unit tests with 100% coverage gate
+        run: make test-coverage
+
+  # Integration tests require a physical Arduino board reachable via
+  # LIVEDUINO_PORT and are not run on GitHub-hosted runners. Run them locally
+  # or on a self-hosted runner with hardware attached:
+  #   LIVEDUINO_PORT=/dev/ttyACM0 make test-integration

@@ -1,4 +1,10 @@
-"""Arduino/Wiring board base class."""
+"""Arduino/Wiring board base class.
+
+Defines ``Board``, the abstract base shared by every concrete board model. It
+exposes the Arduino/Wiring API (pinMode, digitalWrite, analogRead, ...), holds
+the board's pin map and capabilities, and manages the driver and protocol used
+to talk to the hardware.
+"""
 
 from __future__ import annotations
 
@@ -29,7 +35,12 @@ from liveduino.types import AnalogPin, BitOrder, DigitalValue, PinArg, PinMode
 
 
 class Board(abc.ABC):
-    """Abstract base class for Arduino-compatible boards; subclass it per board model."""
+    """Abstract base class for Arduino-compatible boards; subclass it per board model.
+
+    Concrete boards declare their pin map and capabilities as class attributes
+    and inherit the full Arduino/Wiring API. The base class validates pins,
+    modes, and values before delegating to the active protocol client.
+    """
     id: ClassVar[str]
     name: ClassVar[str]
     digital_pins: ClassVar[range]
@@ -83,10 +94,10 @@ class Board(abc.ABC):
         baud: int | None = None,
         driver: Driver | None = None,
     ) -> Self:
-        """Connect this board over serial (default) or a given driver.
-
-        The driver is how the board is connected (serial/TCP/Bluetooth); the
-        protocol is the one chosen when the board was instantiated.
+        """
+        Connect this board over serial (default) or a given driver. The driver
+        is how the board is connected (serial/TCP/Bluetooth); the protocol is
+        the one chosen when the board was instantiated.
         """
         if driver is not None:
             if port is not None or baud is not None:

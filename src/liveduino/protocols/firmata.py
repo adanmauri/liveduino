@@ -49,7 +49,12 @@ _FIRMATA_PIN_MODES = {
 
 
 class _FirmataParser:
-    """Incremental decoder for inbound Firmata digital and analog reports."""
+    """Incremental decoder for inbound Firmata digital and analog reports.
+
+    Fed raw bytes as they arrive, it runs a small synchronous state machine that
+    tracks the current command and caches the latest digital and analog values
+    for later reads.
+    """
     def __init__(self) -> None:
         self.digital_inputs: dict[int, int] = {}
         self.analog_values: dict[int, int] = {}
@@ -111,7 +116,12 @@ class _FirmataParser:
 
 
 class FirmataProtocol:
-    """StandardFirmata client implemented natively over a byte driver."""
+    """StandardFirmata client implemented natively over a byte driver.
+
+    Encodes the board API into Firmata 2.x wire commands and parses incoming
+    reports, without relying on any third-party Firmata library. Operations that
+    StandardFirmata cannot perform raise ``UnsupportedOperationError``.
+    """
     def __init__(self, driver: Driver) -> None:
         self._driver = driver
         self._connected = False

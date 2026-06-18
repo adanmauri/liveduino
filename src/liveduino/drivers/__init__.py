@@ -1,4 +1,8 @@
-"""Driver layer: byte channels to the board (serial, TCP, Bluetooth)."""
+"""Driver layer: byte channels to the board (serial, TCP, Bluetooth).
+
+Public entry point for the driver layer: re-exports the ``Driver`` protocol and
+the concrete drivers used to connect a board over different transports.
+"""
 
 from liveduino.drivers.base import Driver
 from liveduino.drivers.bluetooth import BluetoothDriver

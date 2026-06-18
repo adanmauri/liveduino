@@ -1,4 +1,9 @@
-"""Bluetooth RFCOMM driver."""
+"""Bluetooth RFCOMM driver.
+
+Driver implementation that carries Firmata bytes over a Bluetooth RFCOMM serial
+link, used with modules such as HC-05/HC-06 on platforms that expose RFCOMM
+sockets.
+"""
 
 from __future__ import annotations
 

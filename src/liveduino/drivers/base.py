@@ -1,10 +1,20 @@
-"""Driver abstractions: byte channels from the host to the board."""
+"""Driver abstractions: byte channels from the host to the board.
+
+Defines the ``Driver`` protocol that every transport implements (serial, TCP,
+Bluetooth). Drivers move raw bytes between the host and the board and know
+nothing about the higher-level protocol framing.
+"""
 
 from typing import Protocol
 
 
 class Driver(Protocol):
-    """Byte channel to the microcontroller (serial, Bluetooth, WiFi, etc.)."""
+    """Byte channel to the microcontroller (serial, Bluetooth, WiFi, etc.).
+
+    Structural protocol implemented by every transport. It exposes a minimal
+    open/close/read/write interface plus ``in_waiting`` so protocol clients can
+    exchange bytes without depending on a concrete transport.
+    """
     def open(self) -> None:
         """Open the channel."""
         ...

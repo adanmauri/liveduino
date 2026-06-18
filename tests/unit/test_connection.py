@@ -1,4 +1,8 @@
-"""Unit tests for connection helpers."""
+"""Unit tests for connection helpers.
+
+Exercise the ``connect`` entry point and the board ``connect`` method, covering
+board lookup, driver selection, and the mutually exclusive port/driver options.
+"""
 
 from unittest.mock import MagicMock, patch
 

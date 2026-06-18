@@ -1,4 +1,8 @@
-"""Unit tests for board protocol selection (default and per-connection override)."""
+"""Unit tests for board protocol selection (default and per-connection override).
+
+Verify that a board uses its default ``protocol_factory`` and that a protocol
+supplied at instantiation overrides it, receiving the active driver.
+"""
 
 import pytest
 

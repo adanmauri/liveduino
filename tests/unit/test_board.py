@@ -1,4 +1,9 @@
-"""Unit tests for the Board API."""
+"""Unit tests for the Board API.
+
+Exercise the Arduino/Wiring methods exposed by ``Board`` (pin I/O, PWM, timing,
+and device functions) along with pin and value validation, using mock drivers
+and protocols.
+"""
 
 from unittest.mock import patch
 

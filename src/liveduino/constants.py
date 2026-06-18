@@ -1,4 +1,10 @@
-"""Arduino/Wiring constants."""
+"""Arduino/Wiring constants.
+
+Mirror the constants from the Arduino/Wiring language so existing sketches read
+the same in Python: pin modes (INPUT, OUTPUT, INPUT_PULLUP), digital levels
+(LOW, HIGH), bit orders (LSBFIRST, MSBFIRST), and the analog pin identifiers
+(A0-A20).
+"""
 
 from typing import Final
 

@@ -1,4 +1,8 @@
-"""Unit tests for package exports and ArduinoUno.connect."""
+"""Unit tests for package exports and ArduinoUno.connect.
+
+Verify the public ``liveduino`` namespace (constants, helpers, and drivers) and
+that ``ArduinoUno.connect`` wires up the serial driver and protocol correctly.
+"""
 
 from unittest.mock import MagicMock, patch
 

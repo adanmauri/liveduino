@@ -1,4 +1,9 @@
-"""Board connection helpers."""
+"""Board connection helpers.
+
+High-level entry point for opening a connection to a board. ``connect`` looks up
+a registered board by id and connects it over the chosen driver and protocol,
+returning a ready-to-use ``Board`` instance.
+"""
 
 from __future__ import annotations
 

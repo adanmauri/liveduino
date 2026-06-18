@@ -1,10 +1,18 @@
-"""Arduino Duemilanove / Diecimila board."""
+"""Arduino Duemilanove / Diecimila board.
+
+Board definition for the Arduino Duemilanove or Diecimila (ATmega328/168),
+controlled over USB serial running StandardFirmata.
+"""
 
 from liveduino.boards.board import Board
 
 
 class ArduinoDuemilanove(Board):
-    """Arduino Duemilanove or Diecimila (ATmega328/168) running StandardFirmata."""
+    """Arduino Duemilanove or Diecimila (ATmega328/168) running StandardFirmata.
+
+    ATmega328/168 board with 14 digital pins, 6 analog inputs, and PWM available
+    on pins 3, 5, 6, 9, 10, and 11.
+    """
     id = "arduino:diecimila"
     name = "Arduino Duemilanove or Diecimila"
     digital_pins = range(14)

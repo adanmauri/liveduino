@@ -1,4 +1,8 @@
-"""Unit tests for Arduino value utilities."""
+"""Unit tests for Arduino value utilities.
+
+Exercise the host-side value helpers ``map_range`` and ``constrain``, including
+their edge cases (equal input range and out-of-bounds clamping).
+"""
 
 import pytest
 

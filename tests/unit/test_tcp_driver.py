@@ -1,4 +1,8 @@
-"""Unit tests for TcpDriver."""
+"""Unit tests for TcpDriver.
+
+Exercise the TCP socket driver with a mocked socket, covering open, close,
+buffered reads and writes, error handling, and idempotent reopen.
+"""
 
 from unittest.mock import MagicMock, patch
 

@@ -1,4 +1,9 @@
-"""Host-side Arduino value utilities."""
+"""Host-side Arduino value utilities.
+
+Pure value helpers that mirror Arduino math functions (``map`` and
+``constrain``) but run on the Python host instead of the microcontroller. They
+have no I/O side effects and operate solely on integers.
+"""
 
 from __future__ import annotations
 

@@ -1,10 +1,18 @@
-"""Arduino Pro / Pro Mini board."""
+"""Arduino Pro / Pro Mini board.
+
+Board definition for the Arduino Pro or Pro Mini (ATmega328), controlled over a
+serial link running StandardFirmata.
+"""
 
 from liveduino.boards.board import Board
 
 
 class ArduinoProMini(Board):
-    """Arduino Pro or Pro Mini (ATmega328) over serial running StandardFirmata."""
+    """Arduino Pro or Pro Mini (ATmega328) over serial running StandardFirmata.
+
+    ATmega328 board with 14 digital pins and 8 analog inputs (A6 and A7 are
+    analog-only); PWM is available on pins 3, 5, 6, 9, 10, and 11.
+    """
     id = "arduino:pro"
     name = "Arduino Pro or Pro Mini"
     digital_pins = range(14)

@@ -1,0 +1,47 @@
+## Description
+
+<!-- What failed or what should be built? Which API call / board / connection is involved? -->
+
+## Type
+
+<!-- bug | enhancement | documentation -->
+
+## Environment
+
+<!-- Required for hardware/connection bugs. Omit for docs-only or pure host-logic issues. -->
+
+| Field | Value |
+| --- | --- |
+| **liveduino version** | <!-- `uv run python -c "import importlib.metadata as m; print(m.version('liveduino'))"` --> |
+| **Python version** | <!-- 3.13.x — `python --version` --> |
+| **pyserial version** | <!-- `uv run python -c "import serial; print(serial.__version__)"` --> |
+| **Host OS** | <!-- macOS / Linux / Windows + version (`uname -srm` / `sw_vers`) --> |
+| **Board** | <!-- e.g. Arduino UNO (`arduino:uno`), Nano (`arduino:nano`) --> |
+| **Connection** | <!-- SerialDriver / TcpDriver / BluetoothDriver --> |
+| **Port / host** | <!-- /dev/ttyACM0, COM3, 192.168.1.50:3030, AA:BB:CC:DD:EE:FF --> |
+| **Baud rate** | <!-- e.g. 57600 --> |
+| **Firmware** | <!-- StandardFirmata variant + version flashed on the board --> |
+
+## Steps to reproduce / Proposed change
+
+1.
+2.
+
+## Expected behavior
+
+## Actual behavior
+
+<!-- Error message, the liveduino.exceptions type raised, traceback, etc. -->
+
+## Minimal repro snippet
+
+```python
+# Smallest snippet that triggers the issue
+```
+
+## Acceptance criteria
+
+<!-- For enhancements; delete for pure bug reports. Preserve Arduino/Wiring API fidelity. -->
+
+- [ ]
+- [ ]

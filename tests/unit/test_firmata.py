@@ -1,4 +1,8 @@
-"""Unit tests for the native FirmataProtocol."""
+"""Unit tests for the native FirmataProtocol.
+
+Exercise the Firmata 2.x command encoding and the inbound report parser over a
+fake driver, including reporting setup and unsupported operations.
+"""
 
 from __future__ import annotations
 
