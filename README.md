@@ -19,15 +19,15 @@
 
 ---
 
-**The Arduino API you already know — now live, from Python.** Call `pinMode`,
+**The Arduino API you already know, now live, from Python.** Call `pinMode`,
 `digitalWrite`, `analogRead` and watch the board react **right away**: no compile, no
 upload, no flashing. Just Python talking to real hardware in real time.
 
-It feels like a REPL for your circuit — type a line, the LED blinks; read a pin, the live
+It feels like a REPL for your circuit: type a line, the LED blinks; read a pin, the live
 value comes back. **The Arduino edit-compile-upload loop is gone.**
 
 > **Not** MicroPython. **Not** a sketch compiler. **Not** yet another pin-object API.
-> If you know Arduino, you already know liveduino — there is nothing new to learn.
+> If you know Arduino, you already know liveduino. There is nothing new to learn.
 
 *The spiritual successor to [Frameduino](https://github.com/adanmauri/frameduino), rebuilt
 from scratch for Python 3.13.*
@@ -57,7 +57,7 @@ from scratch for Python 3.13.*
 
 ## About
 
-Arduino's superpower is its API — `pinMode`, `digitalWrite`, `analogRead` — clean, famous,
+Arduino's superpower is its API (`pinMode`, `digitalWrite`, `analogRead`): clean, famous,
 and loved by millions. Its workflow, though, is stuck in **batch**: write a sketch, compile
 it, upload it, wait, repeat. Every tiny change costs you a full round trip, and you never
 get to *talk* to the hardware while it runs.
@@ -68,13 +68,13 @@ the instant you call it. Same function names. Same semantics. Zero new concepts.
 interactive, scriptable, and powered by Python 3.13.
 
 Prototype faster, debug interactively, automate test rigs, drive sensors and actuators from
-your data pipeline — all without leaving Python. This realtime, line-by-line control is the
+your data pipeline, all without leaving Python. This realtime, line-by-line control is the
 original [Frameduino](https://github.com/adanmauri/frameduino) vision, rebuilt from scratch
 for Python 3.13 and a growing catalog of boards.
 
 > **How it works in one line:** liveduino runs your Python on the computer and speaks to
 > firmware already flashed on **your** board. It does not run Python on the chip or compile
-> sketches — and that is exactly why it is instant.
+> sketches, and that is exactly why it is instant.
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
@@ -83,10 +83,10 @@ for Python 3.13 and a growing catalog of boards.
 | | |
 | --- | --- |
 | **Zero learning curve** | If you know Arduino, you are already done. Same names, same semantics, in Python |
-| **Instant feedback** | Every `digitalWrite` / `analogRead` fires on the board *now* — no compile, no upload, no wait |
+| **Instant feedback** | Every `digitalWrite` / `analogRead` fires on the board *now*: no compile, no upload, no wait |
 | **No dependency bloat** | Native StandardFirmata 2.x, written in-house. No third-party Firmata library to drag along |
-| **Connect any way** | One API over USB serial, Wi-Fi/Ethernet (TCP), or Bluetooth RFCOMM — just swap the driver |
-| **Batteries-included catalog** | Auto-discovered profiles for UNO, Nano, Mini, Pro Mini, Fio, and more — add a board by dropping a file |
+| **Connect any way** | One API over USB serial, Wi-Fi/Ethernet (TCP), or Bluetooth RFCOMM; just swap the driver |
+| **Batteries-included catalog** | Auto-discovered profiles for UNO, Nano, Mini, Pro Mini, Fio, and more; add a board by dropping a file |
 | **Typed and safe** | `Literal` types (`PinMode`, `DigitalValue`, `BitOrder`) with pins, modes, and values validated before they hit the wire |
 | **Rock-solid** | 100% unit-test coverage with mocks, plus real-hardware integration tests |
 
@@ -113,7 +113,7 @@ flowchart LR
   FW --> DRV
 ```
 
-1. You call `board.pinMode(13, OUTPUT)` — a plain Python method on a board instance.
+1. You call `board.pinMode(13, OUTPUT)`, a plain Python method on a board instance.
 2. The board validates the pin against its pin map, then hands the request to the protocol.
 3. `FirmataProtocol` encodes a Firmata message and writes the bytes to the **driver** (the channel).
 4. StandardFirmata on the board executes the command; inbound digital/analog reports are decoded back into Python values.
@@ -167,7 +167,7 @@ uv add liveduino
 
 ### Blink from Python
 
-From zero to a blinking LED in a handful of lines — and it runs the moment you hit enter.
+From zero to a blinking LED in a handful of lines, and it runs the moment you hit enter.
 
 ```python
 from liveduino import ArduinoUno, OUTPUT, HIGH, LOW
@@ -212,7 +212,7 @@ Public board methods use **camelCase** to match Arduino/Wiring exactly.
 | `analogWrite(pin, value)` | Yes | PWM duty cycle (`0`-`255`) on a PWM pin |
 | `delay` / `delayMicroseconds` | Host | Block on the Python host |
 | `millis` / `micros` | Host | Elapsed time since the connection was created |
-| `tone` / `noTone` / `pulseIn` / `shiftOut` / `shiftIn` | — | Defined for fidelity; raise `UnsupportedOperationError` under StandardFirmata |
+| `tone` / `noTone` / `pulseIn` / `shiftOut` / `shiftIn` | n/a | Defined for fidelity; raise `UnsupportedOperationError` under StandardFirmata |
 
 Host-side timing runs on the Python process, mirroring the Arduino sketch API. The pure
 value helpers `map_range` and `constrain` are module-level functions
@@ -313,7 +313,7 @@ LIVEDUINO_PORT=/dev/ttyACM0 make test-integration
 ## Architecture
 
 User API → `Board` subclass → `ProtocolClient` → `Driver` → firmware. The protocol
-(*what* is spoken — Firmata) is decoupled from the driver (*where* it connects — serial,
+(*what* is spoken: Firmata) is decoupled from the driver (*where* it connects: serial,
 TCP, Bluetooth), so a board works over any channel by swapping the driver, and never leaks
 protocol internals through public exports.
 

@@ -1,4 +1,4 @@
-# Liveduino — Roadmap / deferred work
+# Liveduino: Roadmap / deferred work
 
 Items not implemented yet. Add entries when scope is agreed; link to issues when they exist.
 
