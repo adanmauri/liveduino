@@ -90,6 +90,7 @@ for Python 3.13 and a growing catalog of boards.
 | **Zero learning curve** | If you know Arduino, you are already done. Same names, same semantics, in Python |
 | **Instant feedback** | Every `digitalWrite` / `analogRead` fires on the board *now*: no compile, no upload, no wait |
 | **No dependency bloat** | Native StandardFirmata 2.x, written in-house. No third-party Firmata library to drag along |
+| **No Arduino IDE** | Flashes StandardFirmata itself in pure Python over the bootloader; no IDE, no avrdude, no toolchain |
 | **Connect any way** | One API over USB serial, Wi-Fi/Ethernet (TCP), or Bluetooth RFCOMM; just swap the driver |
 | **Batteries-included catalog** | Auto-discovered profiles for UNO, Nano, Mini, Pro Mini, Fio, and more; add a board by dropping a file |
 | **Typed and safe** | `Literal` types (`PinMode`, `DigitalValue`, `BitOrder`) with pins, modes, and values validated before they hit the wire |
@@ -112,12 +113,11 @@ is optional (handy if you already use it) and only required to *develop* livedui
 
 **Board** (Arduino UNO or compatible)
 
-1. Install the [Arduino IDE](https://www.arduino.cc/en/software).
-2. Connect the board via USB.
-3. Upload **StandardFirmata**: *File → Examples → Firmata → StandardFirmata → Upload*.
-4. Note the serial port (`/dev/ttyACM0` on Linux, `/dev/cu.usbmodem*` on macOS, `COM3` on Windows).
+1. Connect the board via USB.
+2. Note its serial port (`/dev/ttyACM0` on Linux, `/dev/cu.usbmodem*` on macOS, `COM3` on Windows). Run `liveduino-cli ports` to list them.
 
-Full firmware guide: [`firmware/arduino/README.md`](firmware/arduino/README.md).
+That is it. **No Arduino IDE, no avrdude, no toolchain.** liveduino flashes the firmware
+for you in the next step.
 
 ### Install
 
@@ -128,6 +128,24 @@ uv add liveduino
 ```
 
 > Requires **Python 3.13+**.
+
+### Flash the firmware
+
+liveduino ships a prebuilt StandardFirmata image for each board and flashes it over the
+serial bootloader itself, in pure Python (it speaks STK500v1 and auto-resets the board via
+DTR/RTS). **No Arduino IDE, no avrdude, no `.hex` file, no toolchain.** One command and the
+board is ready:
+
+```bash
+liveduino-cli flash arduino:uno --port /dev/ttyACM0   # flash bundled StandardFirmata
+```
+
+That is the whole setup. The bundled image works offline, and flashing targets the
+ATmega328 family (UNO, Nano, Mini, Pro Mini, ...) today. Variants, custom `.hex`, and every
+option: [`docs/CLI.md`](docs/CLI.md).
+
+> Already flashed StandardFirmata yourself (e.g. from the Arduino IDE)? Skip this step,
+> liveduino talks to whatever StandardFirmata build is already on the board.
 
 ### Blink from Python
 

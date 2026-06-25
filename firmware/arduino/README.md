@@ -1,32 +1,43 @@
 # Arduino UNO firmware setup
 
-Liveduino v0.1 uses **StandardFirmata** on the microcontroller. You do not need to flash custom liveduino firmware for Arduino boards in this release.
+Liveduino v0.1 uses **StandardFirmata** on the microcontroller. You do not need to write or
+flash custom liveduino firmware for Arduino boards in this release, and **you do not need
+the Arduino IDE**: liveduino flashes the firmware for you.
 
-## Steps
+## Flash from the CLI (recommended)
 
-1. Install the [Arduino IDE](https://www.arduino.cc/en/software).
-2. Connect your Arduino UNO via USB.
-3. Open **File → Examples → Firmata → StandardFirmata**.
-4. Select the correct board and port under the **Tools** menu.
-5. Click **Upload**.
-6. Note the serial port:
+liveduino ships a prebuilt StandardFirmata image for each board and flashes it over the
+serial bootloader in pure Python (STK500v1, with DTR/RTS auto-reset). On the ATmega328
+family (UNO, Nano, Mini, Pro Mini, ...) the whole setup is one command, **no Arduino IDE,
+no avrdude, no `.hex` file, no toolchain**:
+
+1. Connect your board via USB.
+2. Find its serial port with `liveduino-cli ports`:
    - Linux: usually `/dev/ttyACM0` or `/dev/ttyUSB0`
    - macOS: `/dev/cu.usbmodem*` or `/dev/tty.usbmodem*`
    - Windows: `COM3`, etc.
-
-## Flash without the Arduino IDE
-
-liveduino ships a prebuilt StandardFirmata image for each board, so on the
-ATmega328 family (UNO, Nano, ...) you can flash straight from the CLI, no Arduino
-IDE and no `.hex` file required:
+3. Flash the bundled StandardFirmata:
 
 ```bash
 liveduino-cli flash arduino:uno --port /dev/ttyACM0    # bundled StandardFirmata for the UNO
 liveduino-cli flash arduino:nano --port /dev/ttyACM0
 ```
 
-Pass `--hex PATH` to flash your own image instead. See
-[`docs/CLI.md`](../../docs/CLI.md) for options.
+The bundled image works offline. Pass `--hex PATH` to flash your own image instead. See
+[`docs/CLI.md`](../../docs/CLI.md) for every option.
+
+## Flash from the Arduino IDE (optional)
+
+Prefer the IDE, or on a board the CLI flasher does not target yet? You can upload
+StandardFirmata by hand:
+
+1. Install the [Arduino IDE](https://www.arduino.cc/en/software).
+2. Connect your Arduino UNO via USB.
+3. Open **File → Examples → Firmata → StandardFirmata**.
+4. Select the correct board and port under the **Tools** menu.
+5. Click **Upload**.
+
+Either way, liveduino talks to whatever StandardFirmata build ends up on the board.
 
 ## Serial settings
 
