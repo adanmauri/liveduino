@@ -14,6 +14,7 @@ class LilyPadArduino(Board):
     pins 3, 5, 6, 9, 10, and 11.
     """
     id = "arduino:lilypad"
+    fqbn = "arduino:avr:lilypad"
     name = "LilyPad Arduino"
     digital_pins = range(14)
     analog_pins = range(6)

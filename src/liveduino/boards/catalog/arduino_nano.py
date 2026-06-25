@@ -14,6 +14,7 @@ class ArduinoNano(Board):
     analog-only); PWM is available on pins 3, 5, 6, 9, 10, and 11.
     """
     id = "arduino:nano"
+    fqbn = "arduino:avr:nano"
     name = "Arduino Nano"
     digital_pins = range(14)
     analog_pins = range(8)

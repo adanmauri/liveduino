@@ -14,6 +14,7 @@ class ArduinoFio(Board):
     analog-only); PWM is available on pins 3, 5, 6, 9, 10, and 11.
     """
     id = "arduino:fio"
+    fqbn = "arduino:avr:fio"
     name = "Arduino Fio"
     digital_pins = range(14)
     analog_pins = range(8)

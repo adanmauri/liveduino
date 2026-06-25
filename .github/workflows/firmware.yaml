@@ -1,0 +1,117 @@
+---
+name: Firmware
+
+on: # yamllint disable-line rule:truthy
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - src/liveduino/boards/catalog/**
+      - scripts/build_firmware.py
+      - .github/workflows/firmware.yaml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/liveduino/boards/catalog/**
+      - scripts/build_firmware.py
+      - .github/workflows/firmware.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify bundled firmware is up to date
+    # The regenerate job handles manual rebuilds; this job guards push/PR drift.
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup uv (with cache)
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install Arduino core and libraries
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install arduino:avr
+          arduino-cli lib install Firmata Servo Ethernet
+
+      - name: Build firmware
+        run: make firmware
+
+      - name: Fail if bundled firmware changed
+        run: |
+          git add -A src/liveduino/firmware
+          if ! git diff --cached --exit-code -- src/liveduino/firmware; then
+            echo "::error::Bundled firmware is out of date. Run 'make firmware' and commit the result."
+            exit 1
+          fi
+
+  regenerate:
+    name: Regenerate firmware and open PR
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup uv (with cache)
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install Arduino core and libraries
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install arduino:avr
+          arduino-cli lib install Firmata Servo Ethernet
+
+      - name: Build firmware
+        run: make firmware
+
+      - name: Open pull request with updated firmware
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: firmware/rebuild
+          title: "chore(firmware): rebuild bundled StandardFirmata images"
+          commit-message: "chore(firmware): rebuild bundled StandardFirmata images"
+          body: |
+            Automated rebuild of the bundled StandardFirmata firmware images via
+            `make firmware` (arduino-cli). Review the updated `.hex` files and
+            `manifest.json` under `src/liveduino/firmware/`.
+          add-paths: src/liveduino/firmware

@@ -54,7 +54,6 @@ _ATMEGA328_BOARDS = [
     ("arduino:fio", 8, True),
     ("arduino:bt", 6, True),
     ("arduino:lilypad", 6, True),
-    ("arduino:atmegang", 6, True),
     ("arduino:unomini", 6, True),
 ]
 
