@@ -14,6 +14,7 @@ class ArduinoBt(Board):
     pins 3, 5, 6, 9, 10, and 11.
     """
     id = "arduino:bt"
+    fqbn = "arduino:avr:bt"
     name = "Arduino BT"
     digital_pins = range(14)
     analog_pins = range(6)

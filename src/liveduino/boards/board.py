@@ -48,6 +48,19 @@ class Board(abc.ABC):
     pwm_pins: ClassVar[frozenset[int]]
     default_baud: ClassVar[int] = 57600
 
+    # Bootloader settings used when flashing firmware over serial (STK500v1).
+    flash_baud: ClassVar[int] = 115200
+    flash_page_size: ClassVar[int] = 128
+
+    # Firmware metadata: the primary sketch the board runs (what 'liveduino-cli flash'
+    # writes over serial) and the arduino-cli FQBN used to build it (fqbn is None
+    # when the board has no bundled firmware). firmware_sketches lists extra Firmata
+    # variants to also build/bundle for the board (e.g. network transports), even if
+    # liveduino does not support them yet.
+    firmware_sketch: ClassVar[str] = "StandardFirmata"
+    firmware_sketches: ClassVar[tuple[str, ...]] = ()
+    fqbn: ClassVar[str | None] = None
+
     # Digital pin number of analog channel A0 (A0=14 on the ATmega328/168 family).
     first_analog_pin: ClassVar[int] = 14
     # Analog channels that are input-only and cannot be used for digital I/O.

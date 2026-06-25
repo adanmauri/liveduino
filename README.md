@@ -26,6 +26,10 @@ upload, no flashing. Just Python talking to real hardware in real time.
 It feels like a REPL for your circuit: type a line, the LED blinks; read a pin, the live
 value comes back. **The Arduino edit-compile-upload loop is gone.**
 
+**Connect any board, any way.** USB, serial, Bluetooth, Wi-Fi or Ethernet: same code, same
+API, just point it at the wire you have. Prototype over USB on your desk, then drive the
+exact same board over Wi-Fi from across the room without changing a single line.
+
 > **Not** MicroPython. **Not** a sketch compiler. **Not** yet another pin-object API.
 > If you know Arduino, you already know liveduino. There is nothing new to learn.
 
@@ -40,15 +44,15 @@ from scratch for Python 3.13.*
 
 - [About](#about)
 - [Features](#features)
+- [Liveduino vs. the alternatives](#liveduino-vs-the-alternatives)
+- [Quick start](#quick-start)
 - [How it works](#how-it-works)
 - [Tech stack](#tech-stack)
-- [Quick start](#quick-start)
 - [Arduino API](#arduino-api)
 - [Supported boards](#supported-boards)
 - [Connections](#connections)
-- [Liveduino vs. the alternatives](#liveduino-vs-the-alternatives)
+- [Command-line interface](#command-line-interface)
 - [Development](#development)
-- [Architecture](#architecture)
 - [Legacy](#legacy)
 - [Documentation](#documentation)
 - [License](#license)
@@ -85,6 +89,7 @@ for Python 3.13 and a growing catalog of boards.
 | **Zero learning curve** | If you know Arduino, you are already done. Same names, same semantics, in Python |
 | **Instant feedback** | Every `digitalWrite` / `analogRead` fires on the board *now*: no compile, no upload, no wait |
 | **No dependency bloat** | Native StandardFirmata 2.x, written in-house. No third-party Firmata library to drag along |
+| **No Arduino IDE** | Flashes StandardFirmata itself in pure Python over the bootloader; no IDE, no avrdude, no toolchain |
 | **Connect any way** | One API over USB serial, Wi-Fi/Ethernet (TCP), or Bluetooth RFCOMM; just swap the driver |
 | **Batteries-included catalog** | Auto-discovered profiles for UNO, Nano, Mini, Pro Mini, Fio, and more; add a board by dropping a file |
 | **Typed and safe** | `Literal` types (`PinMode`, `DigitalValue`, `BitOrder`) with pins, modes, and values validated before they hit the wire |
@@ -92,46 +97,18 @@ for Python 3.13 and a growing catalog of boards.
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
-## How it works
+## Liveduino vs. the alternatives
 
-```mermaid
-flowchart LR
-  subgraph host [Host Python]
-    API[Board API<br/>pinMode, digitalWrite, analogRead]
-    PROTO[FirmataProtocol]
-    DRV[Driver<br/>serial / TCP / Bluetooth]
-  end
-  subgraph board [Microcontroller]
-    FW[StandardFirmata]
-    PINS[GPIO / ADC / PWM]
-  end
-  API --> PROTO
-  PROTO -->|Firmata bytes| DRV
-  DRV --> FW
-  FW --> PINS
-  PINS -->|reports| FW
-  FW --> DRV
-```
+Others make you learn a new API or a new language. liveduino bets on the one you already
+know.
 
-1. You call `board.pinMode(13, OUTPUT)`, a plain Python method on a board instance.
-2. The board validates the pin against its pin map, then hands the request to the protocol.
-3. `FirmataProtocol` encodes a Firmata message and writes the bytes to the **driver** (the channel).
-4. StandardFirmata on the board executes the command; inbound digital/analog reports are decoded back into Python values.
-
-Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-<p align="right">(<a href="#table-of-contents">back to top</a>)</p>
-
-## Tech stack
-
-| Layer | Tools |
-| --- | --- |
-| **Runtime** | Python 3.13+, [uv](https://docs.astral.sh/uv/) |
-| **User API** | `Board` subclasses with camelCase Arduino methods |
-| **Protocol** | Native `FirmataProtocol` (StandardFirmata 2.x, stdlib only) |
-| **Transport** | [pyserial](https://pyserial.readthedocs.io/) (serial); stdlib sockets (TCP, Bluetooth RFCOMM) |
-| **Firmware** | StandardFirmata on the board (UNO MVP) |
-| **Quality** | pytest (100% coverage), ruff, flake8, pylint, mypy, pyright, bandit |
+| | liveduino | pyFirmata / Telemetrix | MicroPython |
+| --- | --- | --- | --- |
+| **API style** | Arduino/Wiring (`pinMode`, `digitalWrite`) | Library-specific | Python on device |
+| **Code runs on** | Host Python | Host Python | Microcontroller |
+| **Firmware** | StandardFirmata | Firmata / custom | MicroPython |
+| **Flashing** | Built in, pure Python (no Arduino IDE) | Arduino IDE / avrdude | esptool / external tool |
+| **Learning curve for Arduino users** | Zero | New API | New language |
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
@@ -139,21 +116,22 @@ Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ### Prerequisites
 
-**Computer** (macOS, Windows, or Linux)
+**Host**
 
 | Requirement | macOS | Windows | Linux |
 | --- | --- | --- | --- |
-| **Python 3.13+** | Installed by `uv` if needed | [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3.13` | Installed by `uv` if needed, or your distro / [python.org](https://www.python.org/downloads/) |
-| **[uv](https://docs.astral.sh/uv/)** (optional) | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 \| iex"` | Same install script as macOS |
+| **Python 3.13+** | [python.org](https://www.python.org/downloads/) or `brew install python@3.13` | [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3.13` | Your distro or [python.org](https://www.python.org/downloads/) |
+
+Python 3.13+ is the only thing you need to *use* liveduino. [uv](https://docs.astral.sh/uv/)
+is optional (handy if you already use it) and only required to *develop* liveduino.
 
 **Board** (Arduino UNO or compatible)
 
-1. Install the [Arduino IDE](https://www.arduino.cc/en/software).
-2. Connect the board via USB.
-3. Upload **StandardFirmata**: *File → Examples → Firmata → StandardFirmata → Upload*.
-4. Note the serial port (`/dev/ttyACM0` on Linux, `/dev/cu.usbmodem*` on macOS, `COM3` on Windows).
+1. Connect the board via USB.
+2. Note its serial port (`/dev/ttyACM0` on Linux, `/dev/cu.usbmodem*` on macOS, `COM3` on Windows). Run `liveduino-cli ports` to list them.
 
-Full firmware guide: [`firmware/arduino/README.md`](firmware/arduino/README.md).
+That is it. **No Arduino IDE, no avrdude, no toolchain.** liveduino flashes the firmware
+for you in the next step.
 
 ### Install
 
@@ -164,6 +142,24 @@ uv add liveduino
 ```
 
 > Requires **Python 3.13+**.
+
+### Flash the firmware
+
+liveduino ships a prebuilt StandardFirmata image for each board and flashes it over the
+serial bootloader itself, in pure Python (it speaks STK500v1 and auto-resets the board via
+DTR/RTS). **No Arduino IDE, no avrdude, no `.hex` file, no toolchain.** One command and the
+board is ready:
+
+```bash
+liveduino-cli flash arduino:uno --port /dev/ttyACM0   # flash bundled StandardFirmata
+```
+
+That is the whole setup. The bundled image works offline, and flashing targets the
+ATmega328 family (UNO, Nano, Mini, Pro Mini, ...) today. Variants, custom `.hex`, and every
+option: [`docs/CLI.md`](docs/CLI.md).
+
+> Already flashed StandardFirmata yourself (e.g. from the Arduino IDE)? Skip this step,
+> liveduino talks to whatever StandardFirmata build is already on the board.
 
 ### Blink from Python
 
@@ -191,48 +187,72 @@ val = board.analogRead(A0)  # same as analogRead(0); returns 0-1023
 board.close()
 ```
 
-Analog pins use the Arduino `A0`-`A20` constants. They are board-agnostic (each carries
-only its analog channel), so the same `A0` works on any board and the board maps it to the
-right pin. `analogRead(A0)` equals `analogRead(0)`, and where the hardware allows it
-`A0`-`A5` double as digital pins (`pinMode(A0, OUTPUT)`); analog-only channels reject
-digital use.
+More on analog pins and the full method table: [`docs/API.md`](docs/API.md).
+
+<p align="right">(<a href="#table-of-contents">back to top</a>)</p>
+
+## How it works
+
+```mermaid
+flowchart LR
+  subgraph host [Host Python]
+    API[Board API<br/>pinMode, digitalWrite, analogRead]
+    PROTO[FirmataProtocol]
+    DRV[Driver<br/>serial / TCP / Bluetooth]
+  end
+  subgraph board [Microcontroller]
+    FW[StandardFirmata]
+    PINS[GPIO / ADC / PWM]
+  end
+  API --> PROTO
+  PROTO -->|Firmata bytes| DRV
+  DRV --> FW
+  FW --> PINS
+  PINS -->|reports| FW
+  FW --> DRV
+```
+
+You call a plain Python method (`board.pinMode(13, OUTPUT)`); the board validates the pin,
+the protocol (*what* is spoken: Firmata) encodes it, and the driver (*where* it connects:
+serial, TCP, Bluetooth) ships the bytes. The two layers are decoupled, so a board works over
+any channel by swapping the driver, never your code.
+
+Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+<p align="right">(<a href="#table-of-contents">back to top</a>)</p>
+
+## Tech stack
+
+| Layer | Tools |
+| --- | --- |
+| **Runtime** | Python 3.13+ |
+| **Tooling (dev only)** | [uv](https://docs.astral.sh/uv/) |
+| **User API** | `Board` subclasses with camelCase Arduino methods |
+| **Protocol** | Native `FirmataProtocol` (StandardFirmata 2.x, stdlib only) |
+| **Transport** | [pyserial](https://pyserial.readthedocs.io/) (serial); stdlib sockets (TCP, Bluetooth RFCOMM) |
+| **Firmware** | StandardFirmata on the board |
+| **Quality** | pytest (100% coverage), ruff, flake8, pylint, mypy, pyright, bandit |
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
 ## Arduino API
 
-Public board methods use **camelCase** to match Arduino/Wiring exactly.
+Public board methods use **camelCase** to match Arduino/Wiring exactly: `pinMode`,
+`digitalWrite`, `digitalRead`, `analogRead`, `analogWrite`, plus host-side timing
+(`delay`, `millis`, ...). Device functions like `tone` and `pulseIn` exist for fidelity but
+raise `UnsupportedOperationError` under StandardFirmata.
 
-| Method | On hardware? | What it does |
-| --- | :---: | --- |
-| `pinMode(pin, mode)` | Yes | Set pin to `INPUT`, `OUTPUT`, or `INPUT_PULLUP` |
-| `digitalWrite(pin, value)` | Yes | Drive a digital pin `HIGH` / `LOW` |
-| `digitalRead(pin)` | Yes | Read a digital pin |
-| `analogRead(pin)` | Yes | Read an analog channel (`0`-`1023`) |
-| `analogWrite(pin, value)` | Yes | PWM duty cycle (`0`-`255`) on a PWM pin |
-| `delay` / `delayMicroseconds` | Host | Block on the Python host |
-| `millis` / `micros` | Host | Elapsed time since the connection was created |
-| `tone` / `noTone` / `pulseIn` / `shiftOut` / `shiftIn` | n/a | Defined for fidelity; raise `UnsupportedOperationError` under StandardFirmata |
-
-Host-side timing runs on the Python process, mirroring the Arduino sketch API. The pure
-value helpers `map_range` and `constrain` are module-level functions
-(`from liveduino import map_range, constrain`).
+Full method table, analog pin model, and the `map_range` / `constrain` helpers:
+[`docs/API.md`](docs/API.md).
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
 ## Supported boards
 
-| Board | Status | Protocol |
-| --- | --- | --- |
-| Arduino UNO | MVP | StandardFirmata over USB serial |
-| Nano, Mini, Pro Mini, Fio | Supported | StandardFirmata (8 analog channels) |
-| Duemilanove/Diecimila, Ethernet, BT, LilyPad, NG, UNO Mini | Supported | StandardFirmata (6 analog channels) |
-| Mega/Mega ADK, Leonardo, Micro | Planned | Firmata |
-| Pinguino | Planned | LiveProtocol (Frameduino-style) |
-
-All ids use the `arduino:<model>` form (e.g. `arduino:nano`, `arduino:pro`,
-`arduino:diecimila`, `arduino:atmegang`). Each board profile only declares its pin map and
-capabilities; the protocol (Firmata) and driver (serial/TCP/Bluetooth) are shared.
+Arduino UNO is fully supported (StandardFirmata over USB serial). Nano, Mini, Pro Mini, Fio,
+Duemilanove/Diecimila, Ethernet, BT, LilyPad, and UNO Mini are supported; Mega, Leonardo,
+Micro, and Pinguino are planned. Board profiles are auto-discovered, so adding one is just
+dropping a file.
 
 ```python
 from liveduino import connect
@@ -240,44 +260,46 @@ from liveduino import connect
 board = connect("arduino:uno", "/dev/ttyACM0")
 ```
 
+Full board table and how to add a board: [`docs/BOARDS.md`](docs/BOARDS.md).
+
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
 ## Connections
 
-Liveduino implements the StandardFirmata protocol natively over a pluggable **driver** (the
-channel), so the same board API works over any medium. The **protocol** is chosen when you
-create the board (default: Firmata); the **driver** is how you connect it. Serial is the
-default.
+**One API, every wire.** Liveduino implements StandardFirmata natively over a pluggable
+**driver** (the channel), so the same board, the same code, and the same Arduino calls run
+over whatever connection you have. Start over USB on your desk, move to Wi-Fi across the
+room, or go wireless over Bluetooth: you swap one line, never your code.
+
+| Connection | When to reach for it | How |
+| --- | --- | --- |
+| **USB / serial** | Plug-and-play on your desk, the default | `.connect("/dev/ttyACM0")` |
+| **Wi-Fi / Ethernet (TCP)** | Drive a board anywhere on the network | `.connect(driver=TcpDriver(host, port))` |
+| **Bluetooth (RFCOMM)** | Cut the cord and go wireless | `.connect(driver=BluetoothDriver(...))` |
 
 ```python
-from liveduino import ArduinoUno, TcpDriver, BluetoothDriver
+from liveduino import ArduinoUno, TcpDriver
 
-# USB serial (default)
-board = ArduinoUno().connect("/dev/ttyACM0")
-
-# Wi-Fi / Ethernet (StandardFirmataWiFi/Ethernet)
-board = ArduinoUno().connect(driver=TcpDriver("192.168.1.50", 3030))
-
-# Bluetooth RFCOMM (e.g. HC-05/HC-06; Linux AF_BLUETOOTH sockets)
-board = ArduinoUno().connect(driver=BluetoothDriver("AA:BB:CC:DD:EE:FF"))
+board = ArduinoUno().connect("/dev/ttyACM0")                          # USB serial (default)
+board = ArduinoUno().connect(driver=TcpDriver("192.168.1.50", 3030))  # Wi-Fi / Ethernet
 ```
 
-Override the protocol at instantiation for a board flashed with different firmware:
-`ArduinoUno(protocol=MyProtocol).connect("/dev/ttyACM0")`.
+Every driver and the protocol override: [`docs/CONNECTIONS.md`](docs/CONNECTIONS.md).
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
-## Liveduino vs. the alternatives
+## Command-line interface
 
-Others make you learn a new API or a new language. liveduino bets on the one you already
-know.
+Installing liveduino adds the `liveduino-cli` console command, pure Python with no extra
+toolchain:
 
-| | liveduino | pyFirmata / Telemetrix | MicroPython |
-| --- | --- | --- | --- |
-| **API style** | Arduino/Wiring (`pinMode`, `digitalWrite`) | Library-specific | Python on device |
-| **Code runs on** | Host Python | Host Python | Microcontroller |
-| **Firmware** | StandardFirmata (UNO MVP) | Firmata / custom | MicroPython |
-| **Learning curve for Arduino users** | Zero | New API | New language |
+```bash
+liveduino-cli flash arduino:uno --port /dev/ttyACM0   # flash bundled StandardFirmata (STK500v1)
+liveduino-cli boards                                  # list catalog boards
+liveduino-cli ports                                   # list serial ports
+```
+
+Full reference: [`docs/CLI.md`](docs/CLI.md).
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
@@ -292,32 +314,8 @@ make install-dev        # installs dev deps + pre-commit hooks
 make check              # lint + type-check + 100% coverage gate
 ```
 
-| Target | What it does |
-| --- | --- |
-| `make install-dev` | Install all deps (incl. dev) + pre-commit hooks |
-| `make lint` | ruff, flake8, pylint |
-| `make type-check` | mypy, pyright |
-| `make security` | bandit |
-| `make test-coverage` | Unit tests with 100% coverage gate |
-| `make test-integration` | Integration tests (requires `LIVEDUINO_PORT`) |
-| `make build` | Build the wheel |
-
-Integration tests (real hardware):
-
-```bash
-LIVEDUINO_PORT=/dev/ttyACM0 make test-integration
-```
-
-<p align="right">(<a href="#table-of-contents">back to top</a>)</p>
-
-## Architecture
-
-User API → `Board` subclass → `ProtocolClient` → `Driver` → firmware. The protocol
-(*what* is spoken: Firmata) is decoupled from the driver (*where* it connects: serial,
-TCP, Bluetooth), so a board works over any channel by swapping the driver, and never leaks
-protocol internals through public exports.
-
-Full design: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Every `make` target, the coverage gate, and how to run hardware integration tests:
+[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
@@ -332,7 +330,12 @@ Frameduino 0.x (Python 2, Pinguino-only) lives in the original
 
 | Document | Audience | Contents |
 | --- | --- | --- |
-| **This README** | Everyone | Motivation, quick start, API, connections |
+| **This README** | Everyone | Motivation, quick start, overview |
+| [`docs/API.md`](docs/API.md) | Users | Full Arduino method table and analog pin model |
+| [`docs/BOARDS.md`](docs/BOARDS.md) | Users | Supported boards and how to add one |
+| [`docs/CONNECTIONS.md`](docs/CONNECTIONS.md) | Users | Drivers (serial, TCP, Bluetooth) and protocol override |
+| [`docs/CLI.md`](docs/CLI.md) | Users | `liveduino-cli` command: flash firmware, list boards and ports |
+| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Contributors | Setup, `make` targets, and tests |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Contributors | Layers, data flow, drivers, analog pins, testing |
 | [`firmware/arduino/README.md`](firmware/arduino/README.md) | Users | StandardFirmata setup and serial settings |
 | [`AGENTS.md`](AGENTS.md) | AI agents | Coding standards and guardrails |
