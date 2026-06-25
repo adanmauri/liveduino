@@ -26,6 +26,10 @@ upload, no flashing. Just Python talking to real hardware in real time.
 It feels like a REPL for your circuit: type a line, the LED blinks; read a pin, the live
 value comes back. **The Arduino edit-compile-upload loop is gone.**
 
+**Connect any board, any way.** USB, serial, Bluetooth, Wi-Fi or Ethernet: same code, same
+API, just point it at the wire you have. Prototype over USB on your desk, then drive the
+exact same board over Wi-Fi from across the room without changing a single line.
+
 > **Not** MicroPython. **Not** a sketch compiler. **Not** yet another pin-object API.
 > If you know Arduino, you already know liveduino. There is nothing new to learn.
 
@@ -101,8 +105,10 @@ for Python 3.13 and a growing catalog of boards.
 
 | Requirement | macOS | Windows | Linux |
 | --- | --- | --- | --- |
-| **Python 3.13+** | Installed by `uv` if needed | [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3.13` | Installed by `uv` if needed, or your distro / [python.org](https://www.python.org/downloads/) |
-| **[uv](https://docs.astral.sh/uv/)** (optional) | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 \| iex"` | Same install script as macOS |
+| **Python 3.13+** | [python.org](https://www.python.org/downloads/) or `brew install python@3.13` | [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3.13` | Your distro or [python.org](https://www.python.org/downloads/) |
+
+Python 3.13+ is the only thing you need to *use* liveduino. [uv](https://docs.astral.sh/uv/)
+is optional (handy if you already use it) and only required to *develop* liveduino.
 
 **Board** (Arduino UNO or compatible)
 
@@ -187,7 +193,8 @@ Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 | Layer | Tools |
 | --- | --- |
-| **Runtime** | Python 3.13+, [uv](https://docs.astral.sh/uv/) |
+| **Runtime** | Python 3.13+ |
+| **Tooling (dev only)** | [uv](https://docs.astral.sh/uv/) |
 | **User API** | `Board` subclasses with camelCase Arduino methods |
 | **Protocol** | Native `FirmataProtocol` (StandardFirmata 2.x, stdlib only) |
 | **Transport** | [pyserial](https://pyserial.readthedocs.io/) (serial); stdlib sockets (TCP, Bluetooth RFCOMM) |
@@ -227,14 +234,21 @@ Full board table and how to add a board: [`docs/BOARDS.md`](docs/BOARDS.md).
 
 ## Connections
 
-Liveduino implements StandardFirmata natively over a pluggable **driver** (the channel), so
-the same board API works over USB serial (default), Wi-Fi/Ethernet (TCP), or Bluetooth
-RFCOMM just by swapping the driver.
+**One API, every wire.** Liveduino implements StandardFirmata natively over a pluggable
+**driver** (the channel), so the same board, the same code, and the same Arduino calls run
+over whatever connection you have. Start over USB on your desk, move to Wi-Fi across the
+room, or go wireless over Bluetooth: you swap one line, never your code.
+
+| Connection | When to reach for it | How |
+| --- | --- | --- |
+| **USB / serial** | Plug-and-play on your desk, the default | `.connect("/dev/ttyACM0")` |
+| **Wi-Fi / Ethernet (TCP)** | Drive a board anywhere on the network | `.connect(driver=TcpDriver(host, port))` |
+| **Bluetooth (RFCOMM)** | Cut the cord and go wireless | `.connect(driver=BluetoothDriver(...))` |
 
 ```python
 from liveduino import ArduinoUno, TcpDriver
 
-board = ArduinoUno().connect("/dev/ttyACM0")                       # USB serial (default)
+board = ArduinoUno().connect("/dev/ttyACM0")                          # USB serial (default)
 board = ArduinoUno().connect(driver=TcpDriver("192.168.1.50", 3030))  # Wi-Fi / Ethernet
 ```
 
