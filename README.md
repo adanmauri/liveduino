@@ -106,7 +106,8 @@ know.
 | --- | --- | --- | --- |
 | **API style** | Arduino/Wiring (`pinMode`, `digitalWrite`) | Library-specific | Python on device |
 | **Code runs on** | Host Python | Host Python | Microcontroller |
-| **Firmware** | StandardFirmata (UNO MVP) | Firmata / custom | MicroPython |
+| **Firmware** | StandardFirmata | Firmata / custom | MicroPython |
+| **Flashing** | Built in, pure Python (no Arduino IDE) | Arduino IDE / avrdude | esptool / external tool |
 | **Learning curve for Arduino users** | Zero | New API | New language |
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
@@ -229,7 +230,7 @@ Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | **User API** | `Board` subclasses with camelCase Arduino methods |
 | **Protocol** | Native `FirmataProtocol` (StandardFirmata 2.x, stdlib only) |
 | **Transport** | [pyserial](https://pyserial.readthedocs.io/) (serial); stdlib sockets (TCP, Bluetooth RFCOMM) |
-| **Firmware** | StandardFirmata on the board (UNO MVP) |
+| **Firmware** | StandardFirmata on the board |
 | **Quality** | pytest (100% coverage), ruff, flake8, pylint, mypy, pyright, bandit |
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
@@ -248,7 +249,7 @@ Full method table, analog pin model, and the `map_range` / `constrain` helpers:
 
 ## Supported boards
 
-Arduino UNO is the MVP (StandardFirmata over USB serial). Nano, Mini, Pro Mini, Fio,
+Arduino UNO is fully supported (StandardFirmata over USB serial). Nano, Mini, Pro Mini, Fio,
 Duemilanove/Diecimila, Ethernet, BT, LilyPad, and UNO Mini are supported; Mega, Leonardo,
 Micro, and Pinguino are planned. Board profiles are auto-discovered, so adding one is just
 dropping a file.
