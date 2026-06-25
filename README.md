@@ -44,6 +44,7 @@ from scratch for Python 3.13.*
 
 - [About](#about)
 - [Features](#features)
+- [Liveduino vs. the alternatives](#liveduino-vs-the-alternatives)
 - [Quick start](#quick-start)
 - [How it works](#how-it-works)
 - [Tech stack](#tech-stack)
@@ -51,9 +52,7 @@ from scratch for Python 3.13.*
 - [Supported boards](#supported-boards)
 - [Connections](#connections)
 - [Command-line interface](#command-line-interface)
-- [Liveduino vs. the alternatives](#liveduino-vs-the-alternatives)
 - [Development](#development)
-- [Architecture](#architecture)
 - [Legacy](#legacy)
 - [Documentation](#documentation)
 - [License](#license)
@@ -95,6 +94,20 @@ for Python 3.13 and a growing catalog of boards.
 | **Batteries-included catalog** | Auto-discovered profiles for UNO, Nano, Mini, Pro Mini, Fio, and more; add a board by dropping a file |
 | **Typed and safe** | `Literal` types (`PinMode`, `DigitalValue`, `BitOrder`) with pins, modes, and values validated before they hit the wire |
 | **Rock-solid** | 100% unit-test coverage with mocks, plus real-hardware integration tests |
+
+<p align="right">(<a href="#table-of-contents">back to top</a>)</p>
+
+## Liveduino vs. the alternatives
+
+Others make you learn a new API or a new language. liveduino bets on the one you already
+know.
+
+| | liveduino | pyFirmata / Telemetrix | MicroPython |
+| --- | --- | --- | --- |
+| **API style** | Arduino/Wiring (`pinMode`, `digitalWrite`) | Library-specific | Python on device |
+| **Code runs on** | Host Python | Host Python | Microcontroller |
+| **Firmware** | StandardFirmata (UNO MVP) | Firmata / custom | MicroPython |
+| **Learning curve for Arduino users** | Zero | New API | New language |
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
@@ -198,10 +211,10 @@ flowchart LR
   FW --> DRV
 ```
 
-1. You call `board.pinMode(13, OUTPUT)`, a plain Python method on a board instance.
-2. The board validates the pin against its pin map, then hands the request to the protocol.
-3. `FirmataProtocol` encodes a Firmata message and writes the bytes to the **driver** (the channel).
-4. StandardFirmata on the board executes the command; inbound digital/analog reports are decoded back into Python values.
+You call a plain Python method (`board.pinMode(13, OUTPUT)`); the board validates the pin,
+the protocol (*what* is spoken: Firmata) encodes it, and the driver (*where* it connects:
+serial, TCP, Bluetooth) ships the bytes. The two layers are decoupled, so a board works over
+any channel by swapping the driver, never your code.
 
 Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
@@ -276,10 +289,8 @@ Every driver and the protocol override: [`docs/CONNECTIONS.md`](docs/CONNECTIONS
 
 ## Command-line interface
 
-Installing liveduino adds a `liveduino-cli` console command. It is pure Python (no
-avrdude or Arduino toolchain) and ships a prebuilt StandardFirmata image per
-board, so it can flash the firmware over the serial bootloader with no Arduino
-IDE and no `.hex` file.
+Installing liveduino adds the `liveduino-cli` console command, pure Python with no extra
+toolchain:
 
 ```bash
 liveduino-cli flash arduino:uno --port /dev/ttyACM0   # flash bundled StandardFirmata (STK500v1)
@@ -287,22 +298,7 @@ liveduino-cli boards                                  # list catalog boards
 liveduino-cli ports                                   # list serial ports
 ```
 
-Flashing targets the ATmega328 family (UNO, Nano, ...) for now. Full reference:
-[`docs/CLI.md`](docs/CLI.md).
-
-<p align="right">(<a href="#table-of-contents">back to top</a>)</p>
-
-## Liveduino vs. the alternatives
-
-Others make you learn a new API or a new language. liveduino bets on the one you already
-know.
-
-| | liveduino | pyFirmata / Telemetrix | MicroPython |
-| --- | --- | --- | --- |
-| **API style** | Arduino/Wiring (`pinMode`, `digitalWrite`) | Library-specific | Python on device |
-| **Code runs on** | Host Python | Host Python | Microcontroller |
-| **Firmware** | StandardFirmata (UNO MVP) | Firmata / custom | MicroPython |
-| **Learning curve for Arduino users** | Zero | New API | New language |
+Full reference: [`docs/CLI.md`](docs/CLI.md).
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
@@ -319,17 +315,6 @@ make check              # lint + type-check + 100% coverage gate
 
 Every `make` target, the coverage gate, and how to run hardware integration tests:
 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
-
-<p align="right">(<a href="#table-of-contents">back to top</a>)</p>
-
-## Architecture
-
-User API → `Board` subclass → `ProtocolClient` → `Driver` → firmware. The protocol
-(*what* is spoken: Firmata) is decoupled from the driver (*where* it connects: serial,
-TCP, Bluetooth), so a board works over any channel by swapping the driver, and never leaks
-protocol internals through public exports.
-
-Full design: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
