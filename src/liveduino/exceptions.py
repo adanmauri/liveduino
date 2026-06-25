@@ -54,3 +54,11 @@ class UnsupportedOperationError(LiveduinoError):
     performed over StandardFirmata; calling them raises this error until a
     protocol implements them.
     """
+
+
+class FlashError(LiveduinoError):
+    """Raised when flashing firmware to the board fails.
+
+    Covers malformed firmware files (bad Intel HEX) and bootloader programming
+    failures such as losing sync, a rejected command, or a failed verification.
+    """

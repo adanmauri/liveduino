@@ -38,7 +38,11 @@ src/liveduino/
 │   └── catalog/    # One Board subclass per board (e.g. ArduinoUno), auto-discovered
 ├── protocols/      # Native FirmataProtocol; future LiveProtocol (Pinguino)
 ├── drivers/        # SerialDriver, TcpDriver, BluetoothDriver (SocketDriver base)
+├── programmers/    # Bootloader flashers (Stk500v1Programmer, intel_hex, firmware resolver)
+├── firmware/       # Bundled StandardFirmata hex images + manifest.json (built, shipped)
+├── cli.py          # liveduino console command (flash, boards, ports)
 └── connection.py   # connect("arduino:uno", port)
+scripts/            # build_firmware.py (regenerates src/liveduino/firmware via arduino-cli)
 firmware/           # MCU setup docs / future firmware
 tests/unit/         # mocks, @pytest.mark.unit
 tests/integration/  # hardware, @pytest.mark.integration, LIVEDUINO_PORT

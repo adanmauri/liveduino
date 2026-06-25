@@ -37,6 +37,9 @@ dependencies = [
     "pyserial>=3.5",
 ]
 
+[project.scripts]
+liveduino-cli = "liveduino.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/adanmauri/liveduino"
 Repository = "https://github.com/adanmauri/liveduino"
@@ -59,6 +62,13 @@ dev = [
 
 [tool.uv]
 package = true
+
+[tool.hatch.build]
+# Ship the bundled StandardFirmata firmware images as package data.
+artifacts = [
+    "src/liveduino/firmware/*.hex",
+    "src/liveduino/firmware/manifest.json",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/liveduino"]

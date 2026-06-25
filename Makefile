@@ -18,7 +18,7 @@ endef
 
 .PHONY: help install install-dev clean clean-cache clean-deps \
 	test test-unit test-integration test-coverage \
-	lint type-check security quality format format-quality check pre-commit build \
+	lint type-check security quality format format-quality check pre-commit build firmware \
 	src tests docs
 
 # Default target
@@ -36,6 +36,7 @@ help:
 	@echo ""
 	$(call ECHO_TITLE,[BUILD] Package:)
 	@echo "  build                   - Build wheel with uv"
+	@echo "  firmware                - Rebuild bundled StandardFirmata hex (needs arduino-cli)"
 	@echo ""
 	$(call ECHO_TITLE,[TEST] Testing:)
 	@echo "  test                    - Run all tests (unit + integration)"
@@ -97,6 +98,11 @@ build:
 	@echo "INFO: Building liveduino wheel..."
 	@uv build || (echo "ERROR: Build failed" && exit 1)
 	$(call ECHO_OK,OK: Build complete.)
+
+firmware:
+	@echo "INFO: Building bundled StandardFirmata firmware (arduino-cli)..."
+	@uv run python scripts/build_firmware.py || (echo "ERROR: Firmware build failed" && exit 1)
+	$(call ECHO_OK,OK: Firmware built.)
 
 # --- Testing ---
 

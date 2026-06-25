@@ -15,6 +15,8 @@ class ArduinoEthernet(Board):
     Ethernet controller.
     """
     id = "arduino:ethernet"
+    fqbn = "arduino:avr:ethernet"
+    firmware_sketches = ("StandardFirmataEthernet",)
     name = "Arduino Ethernet"
     digital_pins = range(14)
     analog_pins = range(6)
