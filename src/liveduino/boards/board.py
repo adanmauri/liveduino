@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import abc
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import ClassVar, Self
 
 from liveduino.constants import (
@@ -29,6 +29,7 @@ from liveduino.exceptions import (
     InvalidValueError,
     LiveduinoError,
 )
+from liveduino.i2c import Wire
 from liveduino.protocols.base import ProtocolClient
 from liveduino.protocols.firmata import FirmataProtocol
 from liveduino.types import AnalogPin, BitOrder, DigitalValue, PinArg, PinMode
@@ -94,6 +95,7 @@ class Board(abc.ABC):
         )
         self._protocol: ProtocolClient | None = None
         self._origin_s = time.monotonic()
+        self._wire: Wire | None = None
 
     @staticmethod
     def protocol_factory(driver: Driver) -> ProtocolClient:
@@ -186,6 +188,43 @@ class Board(abc.ABC):
         if not 0 <= value <= 255:
             raise InvalidValueError(f"analogWrite value must be 0-255, got {value}")
         self._client.analog_write(pin, value)
+
+    def servoWrite(self, pin: PinArg, angle: int) -> None:
+        """Move a servo attached to a pin to an angle (0-180 degrees)."""
+        pin = self._resolve_digital_pin(pin)
+        if not 0 <= angle <= 180:
+            raise InvalidValueError(f"servoWrite angle must be 0-180, got {angle}")
+        self._client.servo_write(pin, angle)
+
+    def servoConfig(self, pin: PinArg, minPulse: int = 544, maxPulse: int = 2400) -> None:
+        """Attach a servo on a pin and set its min/max pulse widths in microseconds."""
+        pin = self._resolve_digital_pin(pin)
+        if not 0 <= minPulse <= maxPulse:
+            raise InvalidValueError(
+                f"servoConfig requires 0 <= minPulse <= maxPulse, got {minPulse}, {maxPulse}"
+            )
+        self._client.servo_config(pin, minPulse, maxPulse)
+
+    def i2cConfig(self, delay: int = 0) -> None:
+        """Enable the I2C bus, optionally setting the read delay in microseconds."""
+        self._client.i2c_config(delay)
+
+    def i2cWrite(self, address: int, data: Iterable[int]) -> None:
+        """Write a sequence of bytes to the I2C device at a 7-bit address."""
+        self._client.i2c_write(address, data)
+
+    def i2cRead(
+        self, address: int, count: int, register: int | None = None, *, restart: bool = False
+    ) -> bytes:
+        """Read count bytes from an I2C device, optionally starting at a register."""
+        return self._client.i2c_read(address, count, register, restart=restart)
+
+    @property
+    def wire(self) -> Wire:
+        """Arduino ``Wire``-style I2C interface bound to this board."""
+        if self._wire is None:
+            self._wire = Wire(self)
+        return self._wire
 
     def tone(self, pin: PinArg, frequency: int, duration: int | None = None) -> None:
         """Generate a square wave of the given frequency on a digital pin."""

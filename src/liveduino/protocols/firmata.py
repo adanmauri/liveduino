@@ -22,6 +22,8 @@ from liveduino.exceptions import (
 from liveduino.types import BitOrder, DigitalValue, PinMode
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from liveduino.drivers.base import Driver
 
 # Firmata command bytes
@@ -35,10 +37,36 @@ REPORT_VERSION = 0xF9
 START_SYSEX = 0xF0
 END_SYSEX = 0xF7
 
+# Firmata sysex sub-commands
+SERVO_CONFIG = 0x70
+I2C_REQUEST = 0x76
+I2C_REPLY = 0x77
+I2C_CONFIG = 0x78
+
+# Servo pulse-width range, in microseconds (a 14-bit value over two 7-bit bytes).
+_MAX_PULSE_WIDTH = 0x3FFF
+# Servo angle range, in degrees, accepted by the Arduino Servo library.
+_MAX_SERVO_ANGLE = 180
+
+# I2C read/write modes, carried in bits 3-4 of the request's mode byte.
+_I2C_WRITE = 0x00
+_I2C_READ = 0x08
+# Bit 6 of the mode byte requests a restart (1) instead of a stop (0) after the write.
+_I2C_RESTART_TX = 0x40
+# A 7-bit I2C address and an 8-bit data/register byte.
+_I2C_ADDRESS_MAX = 0x7F
+_I2C_BYTE_MAX = 0xFF
+# Read delay between write and read, a 14-bit value over two 7-bit bytes.
+_I2C_DELAY_MAX = 0x3FFF
+# Upper bound on bytes pulled while waiting for an I2C reply, so a silent or
+# chatty board cannot block the read forever.
+_MAX_REPLY_READS = 1024
+
 # Firmata pin modes
 _PIN_MODE_INPUT = 0x00
 _PIN_MODE_OUTPUT = 0x01
 _PIN_MODE_PWM = 0x03
+_PIN_MODE_SERVO = 0x04
 _PIN_MODE_PULLUP = 0x0B
 
 _FIRMATA_PIN_MODES = {
@@ -58,16 +86,24 @@ class _FirmataParser:
     def __init__(self) -> None:
         self.digital_inputs: dict[int, int] = {}
         self.analog_values: dict[int, int] = {}
+        self.i2c_replies: dict[tuple[int, int], list[int]] = {}
         self._command = 0
         self._channel = 0
         self._expected = 0
         self._data: list[int] = []
         self._in_sysex = False
+        self._sysex: list[int] = []
 
     def reset(self) -> None:
         """Clear cached pin values."""
         self.digital_inputs.clear()
         self.analog_values.clear()
+        self.i2c_replies.clear()
+
+    def take_i2c_reply(self, address: int, register: int) -> bytes | None:
+        """Pop and return the latest I2C reply for an address/register, if any."""
+        data = self.i2c_replies.pop((address, register), None)
+        return None if data is None else bytes(data)
 
     def feed(self, data: bytes) -> None:
         """Process a chunk of inbound bytes."""
@@ -78,6 +114,9 @@ class _FirmataParser:
         if self._in_sysex:
             if byte == END_SYSEX:
                 self._in_sysex = False
+                self._end_sysex()
+            else:
+                self._sysex.append(byte)
             return
         if byte >= 0x80:
             self._begin_command(byte)
@@ -91,6 +130,7 @@ class _FirmataParser:
     def _begin_command(self, byte: int) -> None:
         if byte == START_SYSEX:
             self._in_sysex = True
+            self._sysex = []
             return
         command = byte & 0xF0
         if command in (DIGITAL_MESSAGE, ANALOG_MESSAGE):
@@ -113,6 +153,19 @@ class _FirmataParser:
                 self.digital_inputs[base + offset] = (value >> offset) & 0x01
         elif self._command == ANALOG_MESSAGE:
             self.analog_values[self._channel] = value
+
+    def _end_sysex(self) -> None:
+        if not self._sysex:
+            return
+        if self._sysex[0] == I2C_REPLY:
+            self._store_i2c_reply(self._sysex[1:])
+
+    def _store_i2c_reply(self, payload: list[int]) -> None:
+        # Each original byte is sent as a 7-bit LSB/MSB pair; the first two decode
+        # to the address and register, the rest are the data bytes.
+        decoded = [payload[i] | (payload[i + 1] << 7) for i in range(0, len(payload) - 1, 2)]
+        if len(decoded) >= 2:
+            self.i2c_replies[(decoded[0], decoded[1])] = decoded[2:]
 
 
 class FirmataProtocol:
@@ -180,6 +233,87 @@ class FirmataProtocol:
             raise InvalidValueError(f"PWM value must be 0-255, got {value}")
         self._send(bytes([SET_PIN_MODE, pin, _PIN_MODE_PWM]))
         self._send(bytes([ANALOG_MESSAGE | (pin & 0x0F), value & 0x7F, (value >> 7) & 0x7F]))
+
+    def servo_config(self, pin: int, min_pulse: int, max_pulse: int) -> None:
+        """Attach a servo on a pin and set its min/max pulse widths (microseconds)."""
+        for pulse in (min_pulse, max_pulse):
+            if not 0 <= pulse <= _MAX_PULSE_WIDTH:
+                raise InvalidValueError(
+                    f"Servo pulse width must be 0-{_MAX_PULSE_WIDTH}, got {pulse}"
+                )
+        self._send(
+            bytes(
+                [
+                    START_SYSEX,
+                    SERVO_CONFIG,
+                    pin,
+                    min_pulse & 0x7F,
+                    (min_pulse >> 7) & 0x7F,
+                    max_pulse & 0x7F,
+                    (max_pulse >> 7) & 0x7F,
+                    END_SYSEX,
+                ]
+            )
+        )
+
+    def servo_write(self, pin: int, angle: int) -> None:
+        """Move a servo to an angle (0-180 degrees), attaching it if needed."""
+        if not 0 <= angle <= _MAX_SERVO_ANGLE:
+            raise InvalidValueError(
+                f"Servo angle must be 0-{_MAX_SERVO_ANGLE}, got {angle}"
+            )
+        self._send(bytes([SET_PIN_MODE, pin, _PIN_MODE_SERVO]))
+        self._send(bytes([ANALOG_MESSAGE | (pin & 0x0F), angle & 0x7F, (angle >> 7) & 0x7F]))
+
+    def i2c_config(self, delay: int = 0) -> None:
+        """Enable the I2C bus, setting the read delay (microseconds) between write and read."""
+        if not 0 <= delay <= _I2C_DELAY_MAX:
+            raise InvalidValueError(f"I2C delay must be 0-{_I2C_DELAY_MAX}, got {delay}")
+        self._send(bytes([START_SYSEX, I2C_CONFIG, delay & 0x7F, (delay >> 7) & 0x7F, END_SYSEX]))
+
+    def i2c_write(self, address: int, data: Iterable[int]) -> None:
+        """Write a sequence of bytes to the I2C device at a 7-bit address."""
+        self._check_i2c_address(address)
+        message = [START_SYSEX, I2C_REQUEST, address, _I2C_WRITE]
+        for value in data:
+            if not 0 <= value <= _I2C_BYTE_MAX:
+                raise InvalidValueError(f"I2C byte must be 0-{_I2C_BYTE_MAX}, got {value}")
+            message += [value & 0x7F, (value >> 7) & 0x7F]
+        message.append(END_SYSEX)
+        self._send(bytes(message))
+
+    def i2c_read(
+        self, address: int, count: int, register: int | None = None, *, restart: bool = False
+    ) -> bytes:
+        """Read ``count`` bytes from an I2C device, optionally from a register."""
+        self._check_i2c_address(address)
+        if count < 0:
+            raise InvalidValueError(f"I2C read count must be non-negative, got {count}")
+        mode = _I2C_READ | (_I2C_RESTART_TX if restart else 0)
+        message = [START_SYSEX, I2C_REQUEST, address, mode]
+        if register is not None:
+            if not 0 <= register <= _I2C_BYTE_MAX:
+                raise InvalidValueError(f"I2C register must be 0-{_I2C_BYTE_MAX}, got {register}")
+            message += [register & 0x7F, (register >> 7) & 0x7F]
+        message += [count & 0x7F, (count >> 7) & 0x7F, END_SYSEX]
+        self._send(bytes(message))
+        return self._await_i2c_reply(address, register if register is not None else 0)
+
+    @staticmethod
+    def _check_i2c_address(address: int) -> None:
+        if not 0 <= address <= _I2C_ADDRESS_MAX:
+            raise InvalidValueError(f"I2C address must be 0-{_I2C_ADDRESS_MAX}, got {address}")
+
+    def _await_i2c_reply(self, address: int, register: int) -> bytes:
+        for _ in range(_MAX_REPLY_READS):
+            chunk = self._driver.read(1)
+            if not chunk:
+                break
+            self._parser.feed(chunk)
+            reply = self._parser.take_i2c_reply(address, register)
+            if reply is not None:
+                return reply
+        raise BoardConnectionError(f"No I2C reply received from address {address}")
 
     def tone(self, pin: int, frequency: int, duration: int | None) -> None:
         """StandardFirmata cannot generate tones; raises UnsupportedOperationError."""
