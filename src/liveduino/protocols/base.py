@@ -5,6 +5,7 @@ protocol. A protocol client encodes the board API into wire commands and decodes
 incoming reports, sitting between the board and the driver.
 """
 
+from collections.abc import Iterable
 from typing import Protocol
 
 from liveduino.types import BitOrder, DigitalValue, PinMode
@@ -43,6 +44,28 @@ class ProtocolClient(Protocol):
 
     def analog_write(self, pin: int, value: int) -> None:
         """Write a PWM value (0-255) to a PWM-capable pin."""
+        ...
+
+    def servo_config(self, pin: int, min_pulse: int, max_pulse: int) -> None:
+        """Attach a servo on a pin and set its min/max pulse widths (microseconds)."""
+        ...
+
+    def servo_write(self, pin: int, angle: int) -> None:
+        """Move a servo to an angle (0-180 degrees)."""
+        ...
+
+    def i2c_config(self, delay: int = 0) -> None:
+        """Enable the I2C bus, setting the read delay in microseconds."""
+        ...
+
+    def i2c_write(self, address: int, data: Iterable[int]) -> None:
+        """Write a sequence of bytes to an I2C device at a 7-bit address."""
+        ...
+
+    def i2c_read(
+        self, address: int, count: int, register: int | None = None, *, restart: bool = False
+    ) -> bytes:
+        """Read count bytes from an I2C device, optionally from a register."""
         ...
 
     def tone(self, pin: int, frequency: int, duration: int | None) -> None:

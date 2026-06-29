@@ -59,6 +59,68 @@ def test_analog_write_on_pwm_pin(board: Board) -> None:
 
 
 @pytest.mark.unit
+def test_servo_write_moves_servo(board: Board) -> None:
+    board.servoWrite(9, 90)
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    assert protocol.servo[9] == 90
+    assert ("servo_write", (9, 90)) in protocol.calls
+
+
+@pytest.mark.unit
+def test_servo_write_rejects_out_of_range_angle(board: Board) -> None:
+    with pytest.raises(InvalidValueError):
+        board.servoWrite(9, 200)
+
+
+@pytest.mark.unit
+def test_servo_config_sets_pulse_range(board: Board) -> None:
+    board.servoConfig(9, 600, 2400)
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    assert ("servo_config", (9, 600, 2400)) in protocol.calls
+
+
+@pytest.mark.unit
+def test_servo_config_defaults(board: Board) -> None:
+    board.servoConfig(9)
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    assert ("servo_config", (9, 544, 2400)) in protocol.calls
+
+
+@pytest.mark.unit
+def test_servo_config_rejects_inverted_range(board: Board) -> None:
+    with pytest.raises(InvalidValueError):
+        board.servoConfig(9, 2400, 600)
+
+
+@pytest.mark.unit
+def test_i2c_config_delegates(board: Board) -> None:
+    board.i2cConfig(100)
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    assert ("i2c_config", (100,)) in protocol.calls
+
+
+@pytest.mark.unit
+def test_i2c_write_delegates(board: Board) -> None:
+    board.i2cWrite(0x68, [0x01, 0x02])
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    assert ("i2c_write", (0x68, (0x01, 0x02))) in protocol.calls
+
+
+@pytest.mark.unit
+def test_i2c_read_returns_reply(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    protocol.i2c_reply = bytes([0xDE, 0xAD])
+    assert board.i2cRead(0x68, 2, register=0x05) == bytes([0xDE, 0xAD])
+    assert ("i2c_read", (0x68, 2, 0x05, False)) in protocol.calls
+
+
+@pytest.mark.unit
 def test_invalid_digital_pin_raises(board: Board) -> None:
     with pytest.raises(InvalidPinError):
         board.digitalWrite(20, HIGH)
