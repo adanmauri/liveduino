@@ -8,6 +8,13 @@ _qual_dir := $(or $(DIR),$(word 2,$(MAKECMDGOALS)),src tests)
 # Integration tests require a connected Arduino serial port.
 LIVEDUINO_PORT ?=
 
+# Pinned Arduino toolchain for reproducible bundled firmware. These exact
+# versions are the single source of truth: CI consumes them through
+# `make firmware-setup`, so local builds and CI produce byte-identical hex.
+# Bump them here (and regenerate firmware) when you intend to update.
+ARDUINO_CORE      ?= arduino:avr@1.8.8
+ARDUINO_LIBRARIES ?= Firmata@2.5.9 Servo@1.3.0 Ethernet@2.0.2
+
 # Green OK / cyan section titles.
 define ECHO_OK
 	@printf '\033[32m%s\033[0m\n' "$(1)"
@@ -18,7 +25,7 @@ endef
 
 .PHONY: help install install-dev clean clean-cache clean-deps \
 	test test-unit test-integration test-coverage \
-	lint type-check security quality format format-quality check pre-commit build firmware \
+	lint type-check security quality format format-quality check pre-commit build firmware firmware-setup \
 	src tests docs
 
 # Default target
@@ -36,7 +43,8 @@ help:
 	@echo ""
 	$(call ECHO_TITLE,[BUILD] Package:)
 	@echo "  build                   - Build wheel with uv"
-	@echo "  firmware                - Rebuild bundled StandardFirmata hex (needs arduino-cli)"
+	@echo "  firmware-setup          - Install pinned arduino-cli core + libraries"
+	@echo "  firmware                - Rebuild bundled StandardFirmata hex (needs firmware-setup)"
 	@echo ""
 	$(call ECHO_TITLE,[TEST] Testing:)
 	@echo "  test                    - Run all tests (unit + integration)"
@@ -75,6 +83,7 @@ install-dev:
 	@echo "INFO: Installing pre-commit hooks (commit + pre-push)..."
 	@uv run pre-commit install
 	@uv run pre-commit install --hook-type pre-push
+	@$(MAKE) --no-print-directory firmware-setup
 	$(call ECHO_OK,OK: Installation complete.)
 
 clean-cache:
@@ -98,6 +107,24 @@ build:
 	@echo "INFO: Building liveduino wheel..."
 	@uv build || (echo "ERROR: Build failed" && exit 1)
 	$(call ECHO_OK,OK: Build complete.)
+
+firmware-setup:
+	@echo "INFO: Setting up Arduino firmware toolchain..."
+	@command -v arduino-cli >/dev/null 2>&1 || { \
+		echo "INFO: arduino-cli not found on PATH; attempting to install it..."; \
+		if command -v brew >/dev/null 2>&1; then \
+			brew install arduino-cli; \
+		else \
+			echo "ERROR: arduino-cli is required. Install it from"; \
+			echo "       https://arduino.github.io/arduino-cli/latest/installation/ and re-run."; \
+			exit 1; \
+		fi; \
+	}
+	@echo "INFO: Installing pinned core ($(ARDUINO_CORE)) and libraries ($(ARDUINO_LIBRARIES))..."
+	@arduino-cli core update-index
+	@arduino-cli core install $(ARDUINO_CORE)
+	@arduino-cli lib install $(ARDUINO_LIBRARIES)
+	$(call ECHO_OK,OK: Firmware toolchain ready.)
 
 firmware:
 	@echo "INFO: Building bundled StandardFirmata firmware (arduino-cli)..."
