@@ -47,10 +47,12 @@ help:
 	@echo "  firmware-setup          - Install pinned arduino-cli core + libraries"
 	@echo "  firmware                - Rebuild bundled StandardFirmata hex (needs firmware-setup)"
 	@echo ""
-	$(call ECHO_TITLE,[CI] GitHub Actions \(via gh\):)
-	@echo "  actions                 - List the repository workflows"
-	@echo "  action WF=<name>        - Trigger a workflow run (e.g. make action WF=tests)"
-	@echo "                            Optional: REF=<branch> (defaults to current branch)"
+	$(call ECHO_TITLE,[CI] GitHub Actions:)
+	@echo "  actions                 - List the workflows you can trigger"
+	@echo "  action WF=<name>        - Trigger any workflow (e.g. make action WF=tests)"
+	@echo "  action-<name>           - Trigger one directly: action-tests, action-quality,"
+	@echo "                            action-security, action-firmware, action-publish, action-todo"
+	@echo "                            (optional REF=<branch>, defaults to current branch)"
 	@echo ""
 	$(call ECHO_TITLE,[TEST] Testing:)
 	@echo "  test                    - Run all tests (unit + integration)"
@@ -212,17 +214,23 @@ pre-commit:
 
 # --- GitHub Actions (via the gh CLI) ---
 
+# List the workflows that can be triggered (one per .github/workflows file).
 actions:
-	@command -v gh >/dev/null 2>&1 || (echo "ERROR: gh CLI not found; install from https://cli.github.com/" && exit 1)
-	@gh workflow list --all
+	$(call ECHO_TITLE,Triggerable workflows (make action WF=<name>  or  make action-<name>):)
+	@ls .github/workflows/*.yaml 2>/dev/null | sed -e 's#.*/##' -e 's/\.yaml$$//' -e 's/^/  /'
 
-# Trigger any workflow. WF=<name> (with or without .yaml), optional REF=<branch>.
-# Example: make action WF=firmware    make action WF=tests REF=main
+# Generic entry point: make action WF=<name> [REF=<branch>]. Delegates to the
+# per-workflow pattern below so both forms share one implementation.
 action:
+	@test -n "$(WF)" || (echo "ERROR: set WF=<workflow>, e.g. make action WF=tests (list: make actions)" && exit 1)
+	@$(MAKE) --no-print-directory action-$(WF:.yaml=)
+
+# Direct per-workflow target, e.g. make action-tests / make action-firmware.
+action-%:
 	@command -v gh >/dev/null 2>&1 || (echo "ERROR: gh CLI not found; install from https://cli.github.com/" && exit 1)
-	@test -n "$(WF)" || (echo "ERROR: set WF=<workflow>, e.g. make action WF=firmware (list: make actions)" && exit 1)
-	@gh workflow run "$(WF:.yaml=).yaml" --ref "$(or $(REF),$(shell git rev-parse --abbrev-ref HEAD))"
-	$(call ECHO_OK,OK: Triggered $(WF:.yaml=). Follow it with: gh run watch)
+	@test -f ".github/workflows/$*.yaml" || (echo "ERROR: no workflow '$*' (list: make actions)" && exit 1)
+	@gh workflow run "$*.yaml" --ref "$(or $(REF),$(shell git rev-parse --abbrev-ref HEAD))"
+	$(call ECHO_OK,OK: Triggered $*. Follow it with: gh run watch)
 
 # Catch-all so a second goal used as a path (e.g. `make lint src`) is not built as a target.
 .SILENT: src tests docs
