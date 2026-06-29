@@ -26,6 +26,7 @@ endef
 .PHONY: help install install-dev clean clean-cache clean-deps \
 	test test-unit test-integration test-coverage \
 	lint type-check security quality format format-quality check pre-commit build firmware firmware-setup \
+	actions action \
 	src tests docs
 
 # Default target
@@ -45,6 +46,11 @@ help:
 	@echo "  build                   - Build wheel with uv"
 	@echo "  firmware-setup          - Install pinned arduino-cli core + libraries"
 	@echo "  firmware                - Rebuild bundled StandardFirmata hex (needs firmware-setup)"
+	@echo ""
+	$(call ECHO_TITLE,[CI] GitHub Actions \(via gh\):)
+	@echo "  actions                 - List the repository workflows"
+	@echo "  action WF=<name>        - Trigger a workflow run (e.g. make action WF=tests)"
+	@echo "                            Optional: REF=<branch> (defaults to current branch)"
 	@echo ""
 	$(call ECHO_TITLE,[TEST] Testing:)
 	@echo "  test                    - Run all tests (unit + integration)"
@@ -203,6 +209,20 @@ pre-commit:
 	@echo "INFO: Running pre-commit hooks on all files..."
 	@uv run pre-commit run --all-files || (echo "ERROR: pre-commit hooks failed" && exit 1)
 	$(call ECHO_OK,OK: pre-commit hooks passed.)
+
+# --- GitHub Actions (via the gh CLI) ---
+
+actions:
+	@command -v gh >/dev/null 2>&1 || (echo "ERROR: gh CLI not found; install from https://cli.github.com/" && exit 1)
+	@gh workflow list --all
+
+# Trigger any workflow. WF=<name> (with or without .yaml), optional REF=<branch>.
+# Example: make action WF=firmware    make action WF=tests REF=main
+action:
+	@command -v gh >/dev/null 2>&1 || (echo "ERROR: gh CLI not found; install from https://cli.github.com/" && exit 1)
+	@test -n "$(WF)" || (echo "ERROR: set WF=<workflow>, e.g. make action WF=firmware (list: make actions)" && exit 1)
+	@gh workflow run "$(WF:.yaml=).yaml" --ref "$(or $(REF),$(shell git rev-parse --abbrev-ref HEAD))"
+	$(call ECHO_OK,OK: Triggered $(WF:.yaml=). Follow it with: gh run watch)
 
 # Catch-all so a second goal used as a path (e.g. `make lint src`) is not built as a target.
 .SILENT: src tests docs
