@@ -51,11 +51,8 @@ jobs:
       - name: Setup arduino-cli
         uses: arduino/setup-arduino-cli@v2
 
-      - name: Install Arduino core and libraries
-        run: |
-          arduino-cli core update-index
-          arduino-cli core install arduino:avr
-          arduino-cli lib install Firmata Servo Ethernet
+      - name: Install pinned Arduino core and libraries
+        run: make firmware-setup
 
       - name: Build firmware
         run: make firmware
@@ -95,11 +92,8 @@ jobs:
       - name: Setup arduino-cli
         uses: arduino/setup-arduino-cli@v2
 
-      - name: Install Arduino core and libraries
-        run: |
-          arduino-cli core update-index
-          arduino-cli core install arduino:avr
-          arduino-cli lib install Firmata Servo Ethernet
+      - name: Install pinned Arduino core and libraries
+        run: make firmware-setup
 
       - name: Build firmware
         run: make firmware
