@@ -49,6 +49,7 @@ from scratch for Python 3.13.*
 - [How it works](#how-it-works)
 - [Tech stack](#tech-stack)
 - [Arduino API](#arduino-api)
+- [Firmware variants](#firmware-variants)
 - [Supported boards](#supported-boards)
 - [Connections](#connections)
 - [Command-line interface](#command-line-interface)
@@ -88,6 +89,7 @@ for Python 3.13 and a growing catalog of boards.
 | --- | --- |
 | **Zero learning curve** | If you know Arduino, you are already done. Same names, same semantics, in Python |
 | **Instant feedback** | Every `digitalWrite` / `analogRead` fires on the board *now*: no compile, no upload, no wait |
+| **Real device coverage** | Digital I/O, analog input, PWM, **servo**, and **I2C** (sensors, displays, ...) — all over the bundled StandardFirmata, no extra firmware |
 | **No dependency bloat** | Native StandardFirmata 2.x, written in-house. No third-party Firmata library to drag along |
 | **No Arduino IDE** | Flashes StandardFirmata itself in pure Python over the bootloader; no IDE, no avrdude, no toolchain |
 | **Connect any way** | One API over USB serial, Wi-Fi/Ethernet (TCP), or Bluetooth RFCOMM; just swap the driver |
@@ -238,12 +240,95 @@ Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 ## Arduino API
 
 Public board methods use **camelCase** to match Arduino/Wiring exactly: `pinMode`,
-`digitalWrite`, `digitalRead`, `analogRead`, `analogWrite`, plus host-side timing
-(`delay`, `millis`, ...). Device functions like `tone` and `pulseIn` exist for fidelity but
-raise `UnsupportedOperationError` under StandardFirmata.
+`digitalWrite`, `digitalRead`, `analogRead`, `analogWrite`, `servoWrite`, plus host-side
+timing (`delay`, `millis`, ...). Device functions that StandardFirmata cannot perform
+(`tone`, `pulseIn`, `shiftOut`/`shiftIn`) exist for fidelity but raise
+`UnsupportedOperationError`.
+
+**What works over StandardFirmata today:**
+
+| Capability | Methods | Firmware |
+| --- | --- | --- |
+| Digital I/O | `pinMode`, `digitalWrite`, `digitalRead` | ✅ built in |
+| Analog input | `analogRead` | ✅ built in |
+| PWM output | `analogWrite` | ✅ built in |
+| **Servo** | `servoWrite`, `servoConfig` | ✅ built in (Servo lib) |
+| **I2C** | `i2cConfig`, `i2cWrite`, `i2cRead` | ✅ built in (Wire lib) |
+| Host-side timing | `delay`, `delayMicroseconds`, `millis`, `micros` | ✅ host only |
+| Tone / pulse / shift | `tone`, `noTone`, `pulseIn`, `shiftOut`, `shiftIn` | ⚠️ raise `UnsupportedOperationError` |
+
+Servo needs no extra setup: `servoWrite(pin, angle)` attaches the servo and moves it (0-180°);
+`servoConfig(pin, minPulse, maxPulse)` customises the pulse range first if your servo needs it.
+
+```python
+board.servoWrite(9, 90)            # center a servo on pin 9
+board.servoConfig(9, 600, 2400)    # optional: set min/max pulse (µs) before writing
+```
+
+**I2C** talks to any device on the bus (sensors, OLED displays, RTCs, ...). Call `i2cConfig`
+once to enable the bus, then `i2cWrite` / `i2cRead`:
+
+```python
+board.i2cConfig()                       # enable the I2C bus (once)
+board.i2cWrite(0x68, [0x6B, 0x00])      # wake an MPU-6050 (write 0x00 to register 0x6B)
+data = board.i2cRead(0x68, 6, register=0x3B)  # read 6 bytes starting at register 0x3B
+```
+
+> **Not identical to Arduino's `Wire`.** liveduino exposes a higher-level, batched I2C API
+> over Firmata rather than the stateful `Wire` object. The mapping is direct:
+>
+> | Arduino `Wire` | liveduino |
+> | --- | --- |
+> | `Wire.begin()` | `board.i2cConfig()` |
+> | `Wire.beginTransmission(a)` + `write(...)` + `endTransmission()` | `board.i2cWrite(a, [...])` |
+> | `Wire.requestFrom(a, n)` + `read()` | `board.i2cRead(a, n)` |
+> | register read (`write(reg)` then `requestFrom`) | `board.i2cRead(a, n, register=reg)` |
+>
+> Other Arduino calls (`pinMode`, `digitalWrite`, `analogRead`, `servoWrite`) keep the exact
+> Arduino name and semantics; I2C differs because Arduino models it as an object, not free
+> functions.
+
+Prefer the literal Arduino `Wire` calls? `board.wire` mirrors them line for line. Alias it
+once (`Wire = board.wire`, standing in for `#include <Wire.h>`) and the rest is identical to
+an Arduino sketch:
+
+```python
+Wire = board.wire          # in place of: #include <Wire.h>
+
+Wire.begin()
+Wire.beginTransmission(0x68)
+Wire.write(0x3B)
+Wire.endTransmission()
+Wire.requestFrom(0x68, 6)
+while Wire.available():
+    value = Wire.read()
+```
 
 Full method table, analog pin model, and the `map_range` / `constrain` helpers:
 [`docs/API.md`](docs/API.md).
+
+<p align="right">(<a href="#table-of-contents">back to top</a>)</p>
+
+## Firmware variants
+
+The Firmata family ships several firmware sketches. liveduino bundles and flashes
+**StandardFirmata** by default (it covers digital/analog I/O, PWM, and servo on a plain
+USB-serial board) and also bundles **StandardFirmataEthernet** for the Ethernet board. Here
+is how they compare, so you know what each one buys you:
+
+| Firmware | Transport | Digital/Analog/PWM | Servo | Extra | liveduino |
+| --- | --- | --- | --- | --- | --- |
+| **StandardFirmata** | Serial | ✅ | ✅ | — | ✅ default |
+| **StandardFirmataPlus** | Serial | ✅ | ✅ | I2C, OneWire, stepper, frequency | not bundled |
+| **StandardFirmataEthernet** | Ethernet (TCP) | ✅ | ✅ | network transport | ✅ bundled extra |
+| **StandardFirmataWiFi** | Wi-Fi (TCP) | ✅ | ✅ | needs `wifiConfig.h` | not bundled |
+| **StandardFirmataBLE** | Bluetooth LE | ✅ | ✅ | needs BLE config | not bundled |
+| **ConfigurableFirmata** | Serial / net | ✅ | ✅ | modular: DHT, stepper, I2C, SPI, encoder | not bundled |
+
+liveduino's client speaks the base Firmata 2.x wire protocol, which all of these share for
+core I/O and servo, so it can talk to any StandardFirmata build already on your board. The
+richer variants (Plus / ConfigurableFirmata) add features that need extra client support
+before liveduino can drive them.
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
