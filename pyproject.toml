@@ -88,6 +88,14 @@ reportIncompatibleVariableOverride = "none"
 [tool.pylint.main]
 ignore-paths = ["^tests/"]
 
+[tool.pylint.design]
+# Board mirrors the Arduino/Wiring API, which is a wide surface (digital/analog
+# I/O, PWM, servo, tone, shift, timing, ...), so allow more public methods.
+max-public-methods = 30
+# The Firmata parser is a byte-level state machine; allow its handful of state
+# fields (caches plus the in-flight command/sysex tracking).
+max-attributes = 10
+
 [tool.pylint.format]
 max-line-length = 100
 

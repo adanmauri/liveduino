@@ -18,10 +18,16 @@ from liveduino.exceptions import (
 from liveduino.protocols.firmata import (
     ANALOG_MESSAGE,
     DIGITAL_MESSAGE,
+    END_SYSEX,
+    I2C_CONFIG,
+    I2C_REPLY,
+    I2C_REQUEST,
     REPORT_ANALOG,
     REPORT_DIGITAL,
+    SERVO_CONFIG,
     SET_DIGITAL_PIN_VALUE,
     SET_PIN_MODE,
+    START_SYSEX,
     FirmataProtocol,
 )
 from tests.shared.fake_driver import FakeDriver
@@ -32,6 +38,14 @@ def _connected() -> tuple[FirmataProtocol, FakeDriver]:
     protocol = FirmataProtocol(driver)
     protocol.connect()
     return protocol, driver
+
+
+def _i2c_reply_bytes(address: int, register: int, data: list[int]) -> bytes:
+    """Encode an inbound I2C_REPLY sysex (each byte as a 7-bit LSB/MSB pair)."""
+    encoded: list[int] = []
+    for value in (address, register, *data):
+        encoded += [value & 0x7F, (value >> 7) & 0x7F]
+    return bytes([START_SYSEX, I2C_REPLY, *encoded, END_SYSEX])
 
 
 @pytest.mark.unit
@@ -125,6 +139,138 @@ def test_analog_write_invalid_value_raises() -> None:
     protocol, _ = _connected()
     with pytest.raises(InvalidValueError):
         protocol.analog_write(6, 999)
+
+
+@pytest.mark.unit
+def test_servo_write_sets_mode_and_angle() -> None:
+    protocol, driver = _connected()
+    protocol.servo_write(9, 90)
+    assert bytes(driver.written) == bytes(
+        [SET_PIN_MODE, 9, 0x04, ANALOG_MESSAGE | 9, 90 & 0x7F, (90 >> 7) & 0x7F]
+    )
+
+
+@pytest.mark.unit
+def test_servo_write_invalid_angle_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(InvalidValueError):
+        protocol.servo_write(9, 181)
+
+
+@pytest.mark.unit
+def test_servo_config_encodes_sysex() -> None:
+    protocol, driver = _connected()
+    protocol.servo_config(9, 600, 2400)
+    assert bytes(driver.written) == bytes(
+        [
+            START_SYSEX,
+            SERVO_CONFIG,
+            9,
+            600 & 0x7F,
+            (600 >> 7) & 0x7F,
+            2400 & 0x7F,
+            (2400 >> 7) & 0x7F,
+            END_SYSEX,
+        ]
+    )
+
+
+@pytest.mark.unit
+def test_servo_config_invalid_pulse_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(InvalidValueError):
+        protocol.servo_config(9, 0, 0x4000)
+
+
+@pytest.mark.unit
+def test_i2c_config_encodes_sysex() -> None:
+    protocol, driver = _connected()
+    protocol.i2c_config()
+    assert bytes(driver.written) == bytes([START_SYSEX, I2C_CONFIG, 0, 0, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_i2c_config_invalid_delay_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(InvalidValueError):
+        protocol.i2c_config(0x4000)
+
+
+@pytest.mark.unit
+def test_i2c_write_encodes_request() -> None:
+    protocol, driver = _connected()
+    protocol.i2c_write(0x68, [0x01, 0x02])
+    assert bytes(driver.written) == bytes(
+        [START_SYSEX, I2C_REQUEST, 0x68, 0x00, 0x01, 0x00, 0x02, 0x00, END_SYSEX]
+    )
+
+
+@pytest.mark.unit
+def test_i2c_write_invalid_address_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(InvalidValueError):
+        protocol.i2c_write(0x80, [0x00])
+
+
+@pytest.mark.unit
+def test_i2c_write_invalid_byte_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(InvalidValueError):
+        protocol.i2c_write(0x10, [0x100])
+
+
+@pytest.mark.unit
+def test_i2c_read_without_register() -> None:
+    protocol, driver = _connected()
+    driver.feed(_i2c_reply_bytes(0x68, 0, [0x12, 0x34]))
+    assert protocol.i2c_read(0x68, 2) == bytes([0x12, 0x34])
+    assert bytes(driver.written) == bytes([START_SYSEX, I2C_REQUEST, 0x68, 0x08, 2, 0, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_i2c_read_with_register() -> None:
+    protocol, driver = _connected()
+    driver.feed(_i2c_reply_bytes(0x68, 0x05, [0xAB]))
+    assert protocol.i2c_read(0x68, 1, register=0x05) == bytes([0xAB])
+    assert bytes(driver.written) == bytes(
+        [START_SYSEX, I2C_REQUEST, 0x68, 0x08, 0x05, 0x00, 1, 0, END_SYSEX]
+    )
+
+
+@pytest.mark.unit
+def test_i2c_read_restart_sets_mode_bit() -> None:
+    protocol, driver = _connected()
+    driver.feed(_i2c_reply_bytes(0x10, 0, [0x01]))
+    protocol.i2c_read(0x10, 1, restart=True)
+    assert bytes(driver.written) == bytes([START_SYSEX, I2C_REQUEST, 0x10, 0x48, 1, 0, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_i2c_read_invalid_count_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(InvalidValueError):
+        protocol.i2c_read(0x10, -1)
+
+
+@pytest.mark.unit
+def test_i2c_read_invalid_register_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(InvalidValueError):
+        protocol.i2c_read(0x10, 1, register=0x100)
+
+
+@pytest.mark.unit
+def test_i2c_read_without_reply_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(BoardConnectionError):
+        protocol.i2c_read(0x68, 2)
+
+
+@pytest.mark.unit
+def test_parser_ignores_empty_sysex() -> None:
+    protocol, driver = _connected()
+    driver.feed(bytes([START_SYSEX, END_SYSEX, DIGITAL_MESSAGE | 0, 0x04, 0x00]))
+    assert protocol.digital_read(2) == 1
 
 
 @pytest.mark.unit

@@ -7,9 +7,12 @@ driver.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from liveduino.types import BitOrder, DigitalValue, PinMode
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 class MockProtocol:
@@ -24,6 +27,8 @@ class MockProtocol:
         self.digital: dict[int, DigitalValue] = {}
         self.analog: dict[int, int] = {}
         self.pwm: dict[int, int] = {}
+        self.servo: dict[int, int] = {}
+        self.i2c_reply: bytes = b""
         self.pulse: int = 0
         self.shifted: int = 0
         self.calls: list[tuple[str, tuple[Any, ...]]] = []
@@ -53,6 +58,25 @@ class MockProtocol:
     def analog_write(self, pin: int, value: int) -> None:
         self.calls.append(("analog_write", (pin, value)))
         self.pwm[pin] = value
+
+    def servo_config(self, pin: int, min_pulse: int, max_pulse: int) -> None:
+        self.calls.append(("servo_config", (pin, min_pulse, max_pulse)))
+
+    def servo_write(self, pin: int, angle: int) -> None:
+        self.calls.append(("servo_write", (pin, angle)))
+        self.servo[pin] = angle
+
+    def i2c_config(self, delay: int = 0) -> None:
+        self.calls.append(("i2c_config", (delay,)))
+
+    def i2c_write(self, address: int, data: Iterable[int]) -> None:
+        self.calls.append(("i2c_write", (address, tuple(data))))
+
+    def i2c_read(
+        self, address: int, count: int, register: int | None = None, *, restart: bool = False
+    ) -> bytes:
+        self.calls.append(("i2c_read", (address, count, register, restart)))
+        return self.i2c_reply
 
     def tone(self, pin: int, frequency: int, duration: int | None) -> None:
         self.calls.append(("tone", (pin, frequency, duration)))
