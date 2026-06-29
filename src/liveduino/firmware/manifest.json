@@ -3,61 +3,61 @@
     "arduino:bt": {
       "file": "standardfirmata-bt.hex",
       "fqbn": "arduino:avr:bt",
-      "sha256": "fe83efacff0d7900acb3db2ccf9b8bc08bc592092dcb8910084a84d7b9bd2295",
+      "sha256": "d7ced0da4bc9530d40dfb2bb61092c84876dc6568fcc2d911ebecf648013eeae",
       "sketch": "StandardFirmata"
     },
     "arduino:diecimila": {
       "file": "standardfirmata-diecimila.hex",
       "fqbn": "arduino:avr:diecimila",
-      "sha256": "af4287c892fcd8dc246772adc1ff9ec2328083d2d81ba137c9f98067871a7a1e",
+      "sha256": "67e13dff2767cb7b202bb7afe0e3ff5daf1460a067276a8f5fdf487fd98d9963",
       "sketch": "StandardFirmata"
     },
     "arduino:ethernet": {
       "file": "standardfirmata-ethernet.hex",
       "fqbn": "arduino:avr:ethernet",
-      "sha256": "af4287c892fcd8dc246772adc1ff9ec2328083d2d81ba137c9f98067871a7a1e",
+      "sha256": "67e13dff2767cb7b202bb7afe0e3ff5daf1460a067276a8f5fdf487fd98d9963",
       "sketch": "StandardFirmata"
     },
     "arduino:fio": {
       "file": "standardfirmata-fio.hex",
       "fqbn": "arduino:avr:fio",
-      "sha256": "9521db3e5966dfad15e3f64808cd11b4f883fec894bea4b1cd429606dac8d213",
+      "sha256": "ec7724f0827ec59dc221aa008972f0a4ea15852293e0771f50dfdbe50a7c1bfe",
       "sketch": "StandardFirmata"
     },
     "arduino:lilypad": {
       "file": "standardfirmata-lilypad.hex",
       "fqbn": "arduino:avr:lilypad",
-      "sha256": "b68c6d318f60f13649201eea95c5307d1bba24f0c8a1897f15f5d18225771d4a",
+      "sha256": "207f69ba69500107d880eb47249e59cf95ebd2aef9c03de2b65e75317d21737f",
       "sketch": "StandardFirmata"
     },
     "arduino:mini": {
       "file": "standardfirmata-mini.hex",
       "fqbn": "arduino:avr:mini",
-      "sha256": "fe83efacff0d7900acb3db2ccf9b8bc08bc592092dcb8910084a84d7b9bd2295",
+      "sha256": "d7ced0da4bc9530d40dfb2bb61092c84876dc6568fcc2d911ebecf648013eeae",
       "sketch": "StandardFirmata"
     },
     "arduino:nano": {
       "file": "standardfirmata-nano.hex",
       "fqbn": "arduino:avr:nano",
-      "sha256": "fe83efacff0d7900acb3db2ccf9b8bc08bc592092dcb8910084a84d7b9bd2295",
+      "sha256": "d7ced0da4bc9530d40dfb2bb61092c84876dc6568fcc2d911ebecf648013eeae",
       "sketch": "StandardFirmata"
     },
     "arduino:pro": {
       "file": "standardfirmata-pro.hex",
       "fqbn": "arduino:avr:pro",
-      "sha256": "fe83efacff0d7900acb3db2ccf9b8bc08bc592092dcb8910084a84d7b9bd2295",
+      "sha256": "d7ced0da4bc9530d40dfb2bb61092c84876dc6568fcc2d911ebecf648013eeae",
       "sketch": "StandardFirmata"
     },
     "arduino:uno": {
       "file": "standardfirmata-uno.hex",
       "fqbn": "arduino:avr:uno",
-      "sha256": "af4287c892fcd8dc246772adc1ff9ec2328083d2d81ba137c9f98067871a7a1e",
+      "sha256": "67e13dff2767cb7b202bb7afe0e3ff5daf1460a067276a8f5fdf487fd98d9963",
       "sketch": "StandardFirmata"
     },
     "arduino:unomini": {
       "file": "standardfirmata-unomini.hex",
       "fqbn": "arduino:avr:unomini",
-      "sha256": "af4287c892fcd8dc246772adc1ff9ec2328083d2d81ba137c9f98067871a7a1e",
+      "sha256": "67e13dff2767cb7b202bb7afe0e3ff5daf1460a067276a8f5fdf487fd98d9963",
       "sketch": "StandardFirmata"
     }
   },
@@ -65,7 +65,7 @@
     "standardfirmataethernet-ethernet.hex": {
       "board": "arduino:ethernet",
       "fqbn": "arduino:avr:ethernet",
-      "sha256": "94ff3fa913ecf1d450143e64730da925f153e04c24230ae02cf2e2d2840a31f9",
+      "sha256": "3b5ce34e9b916035e7a0662e5c7bedac977e99ba8cd9702ce2bfd89e3c5a0bda",
       "sketch": "StandardFirmataEthernet"
     }
   },
