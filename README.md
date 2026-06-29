@@ -15,6 +15,8 @@
 [![tests](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/tests.yaml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=tests)](https://github.com/adanmauri/liveduino/actions/workflows/tests.yaml)
 [![quality](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/code-quality.yaml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=quality)](https://github.com/adanmauri/liveduino/actions/workflows/code-quality.yaml)
 [![security](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/security.yaml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=security)](https://github.com/adanmauri/liveduino/actions/workflows/security.yaml)
+[![firmware](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/firmware.yaml?branch=main&style=flat-square&logo=arduino&logoColor=white&label=firmware)](https://github.com/adanmauri/liveduino/actions/workflows/firmware.yaml)
+[![publish](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/publish.yaml?style=flat-square&logo=pypi&logoColor=white&label=publish)](https://github.com/adanmauri/liveduino/actions/workflows/publish.yaml)
 [![coverage](https://img.shields.io/badge/coverage-100%25-22C55E?style=flat-square&logo=pytest&logoColor=white)](https://github.com/adanmauri/liveduino/actions/workflows/tests.yaml)
 
 ---
