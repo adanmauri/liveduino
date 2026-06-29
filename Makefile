@@ -26,7 +26,7 @@ endef
 .PHONY: help install install-dev clean clean-cache clean-deps \
 	test test-unit test-integration test-coverage \
 	lint type-check security quality format format-quality check pre-commit build firmware firmware-setup \
-	actions action \
+	actions \
 	src tests docs
 
 # Default target
@@ -48,10 +48,9 @@ help:
 	@echo "  firmware                - Rebuild bundled StandardFirmata hex (needs firmware-setup)"
 	@echo ""
 	$(call ECHO_TITLE,[CI] GitHub Actions:)
-	@echo "  actions                 - List the workflows you can trigger"
-	@echo "  action WF=<name>        - Trigger any workflow (e.g. make action WF=tests)"
-	@echo "  action-<name>           - Trigger one directly: action-tests, action-quality,"
-	@echo "                            action-security, action-firmware, action-publish, action-todo"
+	@echo "  actions ls              - List the workflows you can trigger"
+	@echo "  actions workflow-<name> - Trigger a workflow (e.g. actions workflow-tests)"
+	@echo "  actions workflow <name> - Same, with the name as a separate word"
 	@echo "                            (optional REF=<branch>, defaults to current branch)"
 	@echo ""
 	$(call ECHO_TITLE,[TEST] Testing:)
@@ -214,23 +213,28 @@ pre-commit:
 
 # --- GitHub Actions (via the gh CLI) ---
 
-# List the workflows that can be triggered (one per .github/workflows file).
+# Sub-command and workflow name parsed from the goals after `actions`:
+#   actions ls                 -> sub=ls
+#   actions workflow-<name>    -> sub=workflow-<name>, name=<name>
+#   actions workflow <name>    -> sub=workflow, name=<name>
+_actions_args := $(filter-out actions,$(MAKECMDGOALS))
+_actions_sub  := $(firstword $(_actions_args))
+_actions_name := $(if $(filter workflow,$(_actions_sub)),$(word 2,$(_actions_args)),$(_actions_sub:workflow-%=%))
+
 actions:
-	$(call ECHO_TITLE,Triggerable workflows (make action WF=<name>  or  make action-<name>):)
-	@ls .github/workflows/*.yaml 2>/dev/null | sed -e 's#.*/##' -e 's/\.yaml$$//' -e 's/^/  /'
-
-# Generic entry point: make action WF=<name> [REF=<branch>]. Delegates to the
-# per-workflow pattern below so both forms share one implementation.
-action:
-	@test -n "$(WF)" || (echo "ERROR: set WF=<workflow>, e.g. make action WF=tests (list: make actions)" && exit 1)
-	@$(MAKE) --no-print-directory action-$(WF:.yaml=)
-
-# Direct per-workflow target, e.g. make action-tests / make action-firmware.
-action-%:
-	@command -v gh >/dev/null 2>&1 || (echo "ERROR: gh CLI not found; install from https://cli.github.com/" && exit 1)
-	@test -f ".github/workflows/$*.yaml" || (echo "ERROR: no workflow '$*' (list: make actions)" && exit 1)
-	@gh workflow run "$*.yaml" --ref "$(or $(REF),$(shell git rev-parse --abbrev-ref HEAD))"
-	$(call ECHO_OK,OK: Triggered $*. Follow it with: gh run watch)
+	@case '$(_actions_sub)' in \
+	  ''|ls) \
+	    printf '\033[36m%s\033[0m\n' 'Triggerable workflows (actions workflow-<name>):'; \
+	    ls .github/workflows/*.yaml 2>/dev/null | sed -e 's#.*/##' -e 's/\.yaml$$//' -e 's/^/  /' ;; \
+	  workflow|workflow-*) \
+	    name='$(_actions_name:.yaml=)'; \
+	    command -v gh >/dev/null 2>&1 || { echo 'ERROR: gh CLI not found; install from https://cli.github.com/'; exit 1; }; \
+	    test -n "$$name" || { echo 'ERROR: name the workflow, e.g. actions workflow-tests (list: make actions ls)'; exit 1; }; \
+	    test -f ".github/workflows/$$name.yaml" || { echo "ERROR: no workflow '$$name' (run: make actions ls)"; exit 1; }; \
+	    gh workflow run "$$name.yaml" --ref '$(or $(REF),$(shell git rev-parse --abbrev-ref HEAD))'; \
+	    printf '\033[32m%s\033[0m\n' "OK: Triggered $$name. Follow it with: gh run watch" ;; \
+	  *) echo 'Usage: make actions ls | make actions workflow-<name> | make actions workflow <name>'; exit 1 ;; \
+	esac
 
 # Catch-all so a second goal used as a path (e.g. `make lint src`) is not built as a target.
 .SILENT: src tests docs
