@@ -227,8 +227,11 @@ _actions_ref    := $(or $(REF),$(_actions_branch),$(shell git rev-parse --abbrev
 actions:
 	@case '$(_actions_sub)' in \
 	  ''|ls) \
-	    printf '\033[36m%s\033[0m\n' 'Triggerable workflows (actions workflow-<name>):'; \
-	    ls .github/workflows/*.yaml 2>/dev/null | sed -e 's#.*/##' -e 's/\.yaml$$//' -e 's/^/  /' ;; \
+	    for f in .github/workflows/*.yaml; do \
+	      base=$$(basename "$$f" .yaml); \
+	      desc=$$(grep -m1 '^name:' "$$f" | sed 's/^name:[[:space:]]*//'); \
+	      printf '  \033[36m%-14s\033[0m %s\n' "$$base" "$$desc"; \
+	    done ;; \
 	  workflow-*) \
 	    name='$(_actions_name:.yaml=)'; \
 	    command -v gh >/dev/null 2>&1 || { echo 'ERROR: gh CLI not found; install from https://cli.github.com/'; exit 1; }; \
