@@ -8,6 +8,7 @@ on: # yamllint disable-line rule:truthy
       - main
     paths:
       - src/liveduino/boards/catalog/**
+      - src/liveduino/firmware/**
       - scripts/build_firmware.py
       - .github/workflows/firmware.yaml
   pull_request:
@@ -15,6 +16,7 @@ on: # yamllint disable-line rule:truthy
       - main
     paths:
       - src/liveduino/boards/catalog/**
+      - src/liveduino/firmware/**
       - scripts/build_firmware.py
       - .github/workflows/firmware.yaml
 
