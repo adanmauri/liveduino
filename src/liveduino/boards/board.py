@@ -20,6 +20,15 @@ from liveduino.constants import (
     LOW,
     OUTPUT,
 )
+from liveduino.discovery import (
+    MODE_INPUT,
+    MODE_OUTPUT,
+    MODE_PWM,
+    BoardInfo,
+    BoardStatus,
+    Capabilities,
+    PinState,
+)
 from liveduino.drivers.base import Driver
 from liveduino.drivers.serial import SerialDriver
 from liveduino.exceptions import (
@@ -96,6 +105,11 @@ class Board(abc.ABC):
         self._protocol: ProtocolClient | None = None
         self._origin_s = time.monotonic()
         self._wire: Wire | None = None
+        # Per-instance pin capabilities, populated by capabilities() to override
+        # the class-level pin definitions with what the board actually reports.
+        self._caps_digital: frozenset[int] | None = None
+        self._caps_analog: frozenset[int] | None = None
+        self._caps_pwm: frozenset[int] | None = None
 
     @staticmethod
     def protocol_factory(driver: Driver) -> ProtocolClient:
@@ -183,7 +197,7 @@ class Board(abc.ABC):
     def analogWrite(self, pin: PinArg, value: int) -> None:
         """Write a PWM value (0-255) to a PWM-capable digital pin."""
         pin = self._resolve_digital_pin(pin)
-        if not self.supports_pwm(pin):
+        if not self._pin_supports_pwm(pin):
             raise InvalidPinError(f"Pin {pin} does not support PWM on {self.name}")
         if not 0 <= value <= 255:
             raise InvalidValueError(f"analogWrite value must be 0-255, got {value}")
@@ -225,6 +239,44 @@ class Board(abc.ABC):
         if self._wire is None:
             self._wire = Wire(self)
         return self._wire
+
+    def info(self) -> BoardInfo:
+        """Ask the board for its identity: model plus flashed firmware name and version."""
+        major, minor, firmware = self._client.report_firmware()
+        return BoardInfo(
+            id=self.id, name=self.name, firmware=firmware, firmware_version=f"{major}.{minor}"
+        )
+
+    def capabilities(self) -> Capabilities:
+        """Query the board's real per-pin capabilities and use them over the catalog."""
+        caps = Capabilities(
+            modes=self._client.capability_query(),
+            analog_channels=self._client.analog_mapping_query(),
+        )
+        self._caps_digital = caps.pins_supporting(MODE_INPUT) | caps.pins_supporting(MODE_OUTPUT)
+        self._caps_pwm = caps.pins_supporting(MODE_PWM)
+        self._caps_analog = frozenset(caps.analog_channels.values())
+        return caps
+
+    def pinState(self, pin: PinArg) -> PinState:
+        """Ask the board for a pin's current mode and value."""
+        pin = self._resolve_digital_pin(pin)
+        mode, value = self._client.pin_state_query(pin)
+        return PinState(pin=pin, mode=mode, value=value)
+
+    def status(self) -> BoardStatus:
+        """Ask the board for a live snapshot: its info plus every pin's current state."""
+        pins: dict[int, PinState] = {}
+        for pin in self._status_pins():
+            mode, value = self._client.pin_state_query(pin)
+            pins[pin] = PinState(pin=pin, mode=mode, value=value)
+        return BoardStatus(connected=self._protocol is not None, info=self.info(), pins=pins)
+
+    def _status_pins(self) -> list[int]:
+        """Pins to report in status(): the queried digital pins, else the catalog's."""
+        if self._caps_digital is not None:
+            return sorted(self._caps_digital)
+        return list(self.digital_pins)
 
     def tone(self, pin: PinArg, frequency: int, duration: int | None = None) -> None:
         """Generate a square wave of the given frequency on a digital pin."""
@@ -280,7 +332,7 @@ class Board(abc.ABC):
             if pin.channel not in self.analog_pins or pin.channel in self.analog_only_pins:
                 raise InvalidPinError(f"{pin!r} has no digital function on {self.name}")
             resolved = self.first_analog_pin + pin.channel
-        elif self.is_valid_digital_pin(pin):
+        elif self._pin_is_valid_digital(pin):
             resolved = pin
         else:
             raise InvalidPinError(f"Invalid digital pin {pin} for {self.name}")
@@ -289,5 +341,23 @@ class Board(abc.ABC):
         return resolved
 
     def _validate_analog_pin(self, pin: int) -> None:
-        if not self.is_valid_analog_pin(pin):
+        if not self._pin_is_valid_analog(pin):
             raise InvalidPinError(f"Invalid analog pin {pin} for {self.name}")
+
+    def _pin_is_valid_digital(self, pin: int) -> bool:
+        """Digital-pin validity, preferring queried capabilities over the catalog."""
+        if self._caps_digital is not None:
+            return pin in self._caps_digital
+        return self.is_valid_digital_pin(pin)
+
+    def _pin_is_valid_analog(self, channel: int) -> bool:
+        """Analog-channel validity, preferring queried capabilities over the catalog."""
+        if self._caps_analog is not None:
+            return channel in self._caps_analog
+        return self.is_valid_analog_pin(channel)
+
+    def _pin_supports_pwm(self, pin: int) -> bool:
+        """PWM support, preferring queried capabilities over the catalog."""
+        if self._caps_pwm is not None:
+            return pin in self._caps_pwm
+        return self.supports_pwm(pin)

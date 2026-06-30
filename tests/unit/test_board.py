@@ -121,6 +121,70 @@ def test_i2c_read_returns_reply(board: Board) -> None:
 
 
 @pytest.mark.unit
+def test_info_returns_firmware_and_identity(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    protocol.firmware = (2, 5, "StandardFirmata")
+    info = board.info()
+    assert info.firmware == "StandardFirmata"
+    assert info.firmware_version == "2.5"
+    assert info.id == ArduinoUno.id
+    assert info.name == ArduinoUno.name
+
+
+@pytest.mark.unit
+def test_pin_state_returns_mode_and_value(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    protocol.pin_states[13] = (0x01, 1)
+    state = board.pinState(13)
+    assert (state.pin, state.mode, state.value) == (13, 0x01, 1)
+    assert state.mode_name == "OUTPUT"
+
+
+@pytest.mark.unit
+def test_status_snapshots_every_pin(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    status = board.status()
+    assert status.connected is True
+    assert status.info.firmware == "StandardFirmata"
+    assert set(status.pins) == set(board.digital_pins)
+
+
+@pytest.mark.unit
+def test_capabilities_override_the_catalog(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    # Pin 3 supports PWM, pin 4 only digital; analog channels are 4 and 5.
+    protocol.capabilities = {3: [0x00, 0x01, 0x03], 4: [0x00, 0x01]}
+    protocol.analog_mapping = {18: 4, 19: 5}
+    caps = board.capabilities()
+    assert caps.supports(3, 0x03)
+
+    board.analogWrite(3, 100)  # pin 3 reports PWM -> allowed
+    with pytest.raises(InvalidPinError):
+        board.analogWrite(4, 100)  # pin 4 has no PWM per the board
+    board.digitalWrite(3, HIGH)  # pin 3 is digital-capable
+    with pytest.raises(InvalidPinError):
+        board.digitalWrite(5, HIGH)  # pin 5 not reported at all
+    assert board.analogRead(4) == 0  # channel 4 exists per the mapping
+    with pytest.raises(InvalidPinError):
+        board.analogRead(0)  # channel 0 not in the reported mapping
+
+
+@pytest.mark.unit
+def test_status_uses_queried_capabilities(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    protocol.capabilities = {3: [0x00, 0x01], 4: [0x00, 0x01]}
+    protocol.analog_mapping = {}
+    board.capabilities()
+    status = board.status()
+    assert set(status.pins) == {3, 4}
+
+
+@pytest.mark.unit
 def test_invalid_digital_pin_raises(board: Board) -> None:
     with pytest.raises(InvalidPinError):
         board.digitalWrite(20, HIGH)

@@ -46,6 +46,13 @@ from liveduino.constants import (
     MSBFIRST,
     OUTPUT,
 )
+from liveduino.discovery import (
+    BoardInfo,
+    BoardStatus,
+    Capabilities,
+    PinState,
+    mode_name,
+)
 from liveduino.drivers import BluetoothDriver, SerialDriver, TcpDriver
 from liveduino.types import BitOrder, DigitalValue, PinMode
 from liveduino.utilities import constrain, map_range
@@ -84,6 +91,9 @@ __all__ = [
     "BitOrder",
     "BluetoothDriver",
     "Board",
+    "BoardInfo",
+    "BoardStatus",
+    "Capabilities",
     "LilyPadArduino",
     "DigitalValue",
     "HIGH",
@@ -94,9 +104,11 @@ __all__ = [
     "MSBFIRST",
     "OUTPUT",
     "PinMode",
+    "PinState",
     "SerialDriver",
     "TcpDriver",
     "connect",
     "constrain",
     "map_range",
+    "mode_name",
 ]

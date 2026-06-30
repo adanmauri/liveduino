@@ -14,6 +14,10 @@ Public board methods use **camelCase** to match Arduino/Wiring exactly.
 | `i2cConfig(delay=0)` | Yes | Enable the I2C bus (optional read delay in µs) |
 | `i2cWrite(address, data)` | Yes | Write bytes to a 7-bit I2C address |
 | `i2cRead(address, count, register=None, *, restart=False)` | Yes | Read `count` bytes, optionally from a register |
+| `info()` | Yes | Firmware name/version + board identity (`BoardInfo`) |
+| `capabilities()` | Yes | Per-pin supported modes; overrides the catalog (`Capabilities`) |
+| `pinState(pin)` | Yes | A pin's current mode and value (`PinState`) |
+| `status()` | Yes | Live snapshot of every pin (`BoardStatus`) |
 | `delay` / `delayMicroseconds` | Host | Block on the Python host |
 | `millis` / `micros` | Host | Elapsed time since the connection was created |
 | `tone` / `noTone` / `pulseIn` / `shiftOut` / `shiftIn` | n/a | Defined for fidelity; raise `UnsupportedOperationError` under StandardFirmata |
@@ -135,6 +139,36 @@ Caveats versus real Arduino: addresses are 7-bit only, and `endTransmission(stop
 the `stop` flag for compatibility but StandardFirmata always ends a write with a stop, so a
 guaranteed repeated-start register read is best done with `i2cRead(addr, n, register=r,
 restart=True)`.
+
+## Discovery
+
+StandardFirmata can describe itself, so you can ask a connected board who it is, what each
+pin can do, and what state the pins are in right now.
+
+```python
+board.info()        # -> BoardInfo(id='arduino:uno', name='Arduino UNO',
+                    #              firmware='StandardFirmata', firmware_version='2.5')
+
+board.pinState(13)  # -> PinState(pin=13, mode=1, value=1); .mode_name == 'OUTPUT'
+
+board.status()      # -> BoardStatus(connected=True, info=..., pins={pin: PinState, ...})
+```
+
+**`capabilities()` queries the board and then uses what it reports instead of the catalog's
+hardcoded pin map.** After calling it, pin validation (digital / analog / PWM) follows the
+board's own answer:
+
+```python
+caps = board.capabilities()      # -> Capabilities(modes={pin: [mode, ...]}, analog_channels=...)
+caps.supports(9, 0x04)           # does pin 9 support SERVO?
+caps.mode_names(3)               # -> ['INPUT', 'OUTPUT', 'PWM']
+caps.pins_supporting(0x03)       # -> frozenset of PWM-capable pins
+
+board.analogWrite(3, 128)        # now allowed only if the board reported PWM on pin 3
+```
+
+`BoardInfo`, `PinState`, `Capabilities`, and `BoardStatus` (and the `mode_name` helper) are
+importable from `liveduino`. Each query is one round-trip; `status()` queries every pin.
 
 See also: [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) for how the API maps onto the protocol
 and driver layers.
