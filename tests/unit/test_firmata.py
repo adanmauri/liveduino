@@ -16,14 +16,21 @@ from liveduino.exceptions import (
     UnsupportedOperationError,
 )
 from liveduino.protocols.firmata import (
+    ANALOG_MAPPING_QUERY,
+    ANALOG_MAPPING_RESPONSE,
     ANALOG_MESSAGE,
+    CAPABILITY_QUERY,
+    CAPABILITY_RESPONSE,
     DIGITAL_MESSAGE,
     END_SYSEX,
     I2C_CONFIG,
     I2C_REPLY,
     I2C_REQUEST,
+    PIN_STATE_QUERY,
+    PIN_STATE_RESPONSE,
     REPORT_ANALOG,
     REPORT_DIGITAL,
+    REPORT_FIRMWARE,
     SERVO_CONFIG,
     SET_DIGITAL_PIN_VALUE,
     SET_PIN_MODE,
@@ -271,6 +278,75 @@ def test_parser_ignores_empty_sysex() -> None:
     protocol, driver = _connected()
     driver.feed(bytes([START_SYSEX, END_SYSEX, DIGITAL_MESSAGE | 0, 0x04, 0x00]))
     assert protocol.digital_read(2) == 1
+
+
+def _firmware_bytes(major: int, minor: int, name: str) -> bytes:
+    """Encode an inbound REPORT_FIRMWARE sysex (name chars as 7-bit pairs)."""
+    chars: list[int] = []
+    for char in name:
+        code = ord(char)
+        chars += [code & 0x7F, (code >> 7) & 0x7F]
+    return bytes([START_SYSEX, REPORT_FIRMWARE, major, minor, *chars, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_report_firmware_parses_name_and_version() -> None:
+    protocol, driver = _connected()
+    driver.feed(_firmware_bytes(2, 5, "StandardFirmata"))
+    assert protocol.report_firmware() == (2, 5, "StandardFirmata")
+    assert bytes(driver.written) == bytes([START_SYSEX, REPORT_FIRMWARE, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_report_firmware_without_reply_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(BoardConnectionError):
+        protocol.report_firmware()
+
+
+@pytest.mark.unit
+def test_capability_query_parses_per_pin_modes() -> None:
+    protocol, driver = _connected()
+    # pin 0: INPUT/OUTPUT, pin 1: PWM. Each mode is followed by a resolution byte.
+    driver.feed(
+        bytes(
+            [
+                START_SYSEX, CAPABILITY_RESPONSE,
+                0x00, 0x01, 0x01, 0x01, 0x7F,
+                0x03, 0x08, 0x7F,
+                END_SYSEX,
+            ]
+        )
+    )
+    assert protocol.capability_query() == {0: [0x00, 0x01], 1: [0x03]}
+    assert bytes(driver.written) == bytes([START_SYSEX, CAPABILITY_QUERY, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_analog_mapping_query_skips_non_analog_pins() -> None:
+    protocol, driver = _connected()
+    # pins 0,1 are not analog (0x7F); pin 2 -> channel 0, pin 3 -> channel 1.
+    driver.feed(
+        bytes([START_SYSEX, ANALOG_MAPPING_RESPONSE, 0x7F, 0x7F, 0x00, 0x01, END_SYSEX])
+    )
+    assert protocol.analog_mapping_query() == {2: 0, 3: 1}
+    assert bytes(driver.written) == bytes([START_SYSEX, ANALOG_MAPPING_QUERY, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_pin_state_query_parses_mode_and_value() -> None:
+    protocol, driver = _connected()
+    driver.feed(bytes([START_SYSEX, PIN_STATE_RESPONSE, 13, 0x01, 0x01, END_SYSEX]))
+    assert protocol.pin_state_query(13) == (0x01, 1)
+    assert bytes(driver.written) == bytes([START_SYSEX, PIN_STATE_QUERY, 13, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_pin_state_query_combines_multibyte_value() -> None:
+    protocol, driver = _connected()
+    # value 200 = 0x48 | (0x01 << 7).
+    driver.feed(bytes([START_SYSEX, PIN_STATE_RESPONSE, 9, 0x03, 0x48, 0x01, END_SYSEX]))
+    assert protocol.pin_state_query(9) == (0x03, 200)
 
 
 @pytest.mark.unit

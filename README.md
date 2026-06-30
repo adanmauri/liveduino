@@ -256,6 +256,7 @@ timing (`delay`, `millis`, ...). Device functions that StandardFirmata cannot pe
 | PWM output | `analogWrite` | ✅ built in |
 | **Servo** | `servoWrite`, `servoConfig` | ✅ built in (Servo lib) |
 | **I2C** | `i2cConfig`, `i2cWrite`, `i2cRead` | ✅ built in (Wire lib) |
+| **Discovery** | `info`, `capabilities`, `pinState`, `status` | ✅ built in (Firmata queries) |
 | Host-side timing | `delay`, `delayMicroseconds`, `millis`, `micros` | ✅ host only |
 | Tone / pulse / shift | `tone`, `noTone`, `pulseIn`, `shiftOut`, `shiftIn` | ⚠️ raise `UnsupportedOperationError` |
 
@@ -304,6 +305,15 @@ Wire.endTransmission()
 Wire.requestFrom(0x68, 6)
 while Wire.available():
     value = Wire.read()
+```
+
+**Discovery** lets you ask a connected board about itself, instead of trusting the catalog:
+
+```python
+board.info()            # firmware name/version + board identity
+board.pinState(13)      # a pin's live mode and value
+board.status()          # snapshot of every pin
+board.capabilities()    # what each pin really supports — and uses it over the catalog
 ```
 
 Full method table, analog pin model, and the `map_range` / `constrain` helpers:

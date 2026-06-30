@@ -29,6 +29,10 @@ class MockProtocol:
         self.pwm: dict[int, int] = {}
         self.servo: dict[int, int] = {}
         self.i2c_reply: bytes = b""
+        self.firmware: tuple[int, int, str] = (2, 5, "StandardFirmata")
+        self.capabilities: dict[int, list[int]] = {}
+        self.analog_mapping: dict[int, int] = {}
+        self.pin_states: dict[int, tuple[int, int]] = {}
         self.pulse: int = 0
         self.shifted: int = 0
         self.calls: list[tuple[str, tuple[Any, ...]]] = []
@@ -77,6 +81,22 @@ class MockProtocol:
     ) -> bytes:
         self.calls.append(("i2c_read", (address, count, register, restart)))
         return self.i2c_reply
+
+    def report_firmware(self) -> tuple[int, int, str]:
+        self.calls.append(("report_firmware", ()))
+        return self.firmware
+
+    def capability_query(self) -> dict[int, list[int]]:
+        self.calls.append(("capability_query", ()))
+        return self.capabilities
+
+    def analog_mapping_query(self) -> dict[int, int]:
+        self.calls.append(("analog_mapping_query", ()))
+        return self.analog_mapping
+
+    def pin_state_query(self, pin: int) -> tuple[int, int]:
+        self.calls.append(("pin_state_query", (pin,)))
+        return self.pin_states.get(pin, (0, 0))
 
     def tone(self, pin: int, frequency: int, duration: int | None) -> None:
         self.calls.append(("tone", (pin, frequency, duration)))

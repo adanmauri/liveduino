@@ -68,6 +68,22 @@ class ProtocolClient(Protocol):
         """Read count bytes from an I2C device, optionally from a register."""
         ...
 
+    def report_firmware(self) -> tuple[int, int, str]:
+        """Query the firmware (major, minor, name)."""
+        ...
+
+    def capability_query(self) -> dict[int, list[int]]:
+        """Query the modes each pin supports."""
+        ...
+
+    def analog_mapping_query(self) -> dict[int, int]:
+        """Query the pin-to-analog-channel mapping."""
+        ...
+
+    def pin_state_query(self, pin: int) -> tuple[int, int]:
+        """Query a pin's current (mode, value)."""
+        ...
+
     def tone(self, pin: int, frequency: int, duration: int | None) -> None:
         """Generate a square wave of the given frequency on a pin."""
         ...

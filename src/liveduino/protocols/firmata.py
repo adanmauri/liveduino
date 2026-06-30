@@ -8,7 +8,7 @@ that is pumped on each read.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from liveduino.constants import INPUT as LD_INPUT
 from liveduino.constants import INPUT_PULLUP as LD_INPUT_PULLUP
@@ -22,9 +22,11 @@ from liveduino.exceptions import (
 from liveduino.types import BitOrder, DigitalValue, PinMode
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
     from liveduino.drivers.base import Driver
+
+_T = TypeVar("_T")
 
 # Firmata command bytes
 DIGITAL_MESSAGE = 0x90
@@ -38,10 +40,22 @@ START_SYSEX = 0xF0
 END_SYSEX = 0xF7
 
 # Firmata sysex sub-commands
+ANALOG_MAPPING_QUERY = 0x69
+ANALOG_MAPPING_RESPONSE = 0x6A
+CAPABILITY_QUERY = 0x6B
+CAPABILITY_RESPONSE = 0x6C
+PIN_STATE_QUERY = 0x6D
+PIN_STATE_RESPONSE = 0x6E
 SERVO_CONFIG = 0x70
 I2C_REQUEST = 0x76
 I2C_REPLY = 0x77
 I2C_CONFIG = 0x78
+REPORT_FIRMWARE = 0x79
+
+# Per-pin terminator in a capability response, and the "no analog channel" marker
+# in an analog-mapping response.
+_CAPABILITY_END = 0x7F
+_NO_ANALOG_CHANNEL = 0x7F
 
 # Servo pulse-width range, in microseconds (a 14-bit value over two 7-bit bytes).
 _MAX_PULSE_WIDTH = 0x3FFF
@@ -87,6 +101,10 @@ class _FirmataParser:
         self.digital_inputs: dict[int, int] = {}
         self.analog_values: dict[int, int] = {}
         self.i2c_replies: dict[tuple[int, int], list[int]] = {}
+        self.firmware: tuple[int, int, str] | None = None
+        self.capabilities: dict[int, list[int]] | None = None
+        self.analog_mapping: dict[int, int] | None = None
+        self.pin_states: dict[int, tuple[int, int]] = {}
         self._command = 0
         self._channel = 0
         self._expected = 0
@@ -95,15 +113,38 @@ class _FirmataParser:
         self._sysex: list[int] = []
 
     def reset(self) -> None:
-        """Clear cached pin values."""
+        """Clear cached pin values and discovery results."""
         self.digital_inputs.clear()
         self.analog_values.clear()
         self.i2c_replies.clear()
+        self.firmware = None
+        self.capabilities = None
+        self.analog_mapping = None
+        self.pin_states.clear()
 
     def take_i2c_reply(self, address: int, register: int) -> bytes | None:
         """Pop and return the latest I2C reply for an address/register, if any."""
         data = self.i2c_replies.pop((address, register), None)
         return None if data is None else bytes(data)
+
+    def take_firmware(self) -> tuple[int, int, str] | None:
+        """Pop the reported firmware (major, minor, name), if received."""
+        firmware, self.firmware = self.firmware, None
+        return firmware
+
+    def take_capabilities(self) -> dict[int, list[int]] | None:
+        """Pop the per-pin supported modes, if received."""
+        capabilities, self.capabilities = self.capabilities, None
+        return capabilities
+
+    def take_analog_mapping(self) -> dict[int, int] | None:
+        """Pop the pin-to-analog-channel mapping, if received."""
+        mapping, self.analog_mapping = self.analog_mapping, None
+        return mapping
+
+    def take_pin_state(self, pin: int) -> tuple[int, int] | None:
+        """Pop a pin's reported (mode, value), if received."""
+        return self.pin_states.pop(pin, None)
 
     def feed(self, data: bytes) -> None:
         """Process a chunk of inbound bytes."""
@@ -157,8 +198,10 @@ class _FirmataParser:
     def _end_sysex(self) -> None:
         if not self._sysex:
             return
-        if self._sysex[0] == I2C_REPLY:
-            self._store_i2c_reply(self._sysex[1:])
+        command, payload = self._sysex[0], self._sysex[1:]
+        handler = self._SYSEX_HANDLERS.get(command)
+        if handler is not None:
+            handler(self, payload)
 
     def _store_i2c_reply(self, payload: list[int]) -> None:
         # Each original byte is sent as a 7-bit LSB/MSB pair; the first two decode
@@ -166,6 +209,50 @@ class _FirmataParser:
         decoded = [payload[i] | (payload[i + 1] << 7) for i in range(0, len(payload) - 1, 2)]
         if len(decoded) >= 2:
             self.i2c_replies[(decoded[0], decoded[1])] = decoded[2:]
+
+    def _store_firmware(self, payload: list[int]) -> None:
+        if len(payload) >= 2:
+            chars = payload[2:]
+            name = "".join(
+                chr(chars[i] | (chars[i + 1] << 7)) for i in range(0, len(chars) - 1, 2)
+            )
+            self.firmware = (payload[0], payload[1], name)
+
+    def _store_capabilities(self, payload: list[int]) -> None:
+        # Each pin lists (mode, resolution) pairs ending in 0x7F; pins are in order.
+        capabilities: dict[int, list[int]] = {}
+        modes: list[int] = []
+        pin = index = 0
+        while index < len(payload):
+            if payload[index] == _CAPABILITY_END:
+                capabilities[pin] = modes
+                pin, modes, index = pin + 1, [], index + 1
+            else:
+                modes.append(payload[index])
+                index += 2
+        self.capabilities = capabilities
+
+    def _store_analog_mapping(self, payload: list[int]) -> None:
+        self.analog_mapping = {
+            pin: channel
+            for pin, channel in enumerate(payload)
+            if channel != _NO_ANALOG_CHANNEL
+        }
+
+    def _store_pin_state(self, payload: list[int]) -> None:
+        if len(payload) >= 2:
+            value = 0
+            for shift, byte in enumerate(payload[2:]):
+                value |= byte << (7 * shift)
+            self.pin_states[payload[0]] = (payload[1], value)
+
+    _SYSEX_HANDLERS = {
+        I2C_REPLY: _store_i2c_reply,
+        REPORT_FIRMWARE: _store_firmware,
+        CAPABILITY_RESPONSE: _store_capabilities,
+        ANALOG_MAPPING_RESPONSE: _store_analog_mapping,
+        PIN_STATE_RESPONSE: _store_pin_state,
+    }
 
 
 class FirmataProtocol:
@@ -297,23 +384,46 @@ class FirmataProtocol:
             message += [register & 0x7F, (register >> 7) & 0x7F]
         message += [count & 0x7F, (count >> 7) & 0x7F, END_SYSEX]
         self._send(bytes(message))
-        return self._await_i2c_reply(address, register if register is not None else 0)
+        reply_register = register if register is not None else 0
+        return self._await_reply(
+            lambda: self._parser.take_i2c_reply(address, reply_register), "I2C reply"
+        )
 
     @staticmethod
     def _check_i2c_address(address: int) -> None:
         if not 0 <= address <= _I2C_ADDRESS_MAX:
             raise InvalidValueError(f"I2C address must be 0-{_I2C_ADDRESS_MAX}, got {address}")
 
-    def _await_i2c_reply(self, address: int, register: int) -> bytes:
+    def report_firmware(self) -> tuple[int, int, str]:
+        """Query the board's firmware name and (major, minor) version."""
+        self._send(bytes([START_SYSEX, REPORT_FIRMWARE, END_SYSEX]))
+        return self._await_reply(self._parser.take_firmware, "firmware report")
+
+    def capability_query(self) -> dict[int, list[int]]:
+        """Query the modes each pin supports (pin -> list of Firmata mode bytes)."""
+        self._send(bytes([START_SYSEX, CAPABILITY_QUERY, END_SYSEX]))
+        return self._await_reply(self._parser.take_capabilities, "capability response")
+
+    def analog_mapping_query(self) -> dict[int, int]:
+        """Query the pin-to-analog-channel mapping."""
+        self._send(bytes([START_SYSEX, ANALOG_MAPPING_QUERY, END_SYSEX]))
+        return self._await_reply(self._parser.take_analog_mapping, "analog mapping")
+
+    def pin_state_query(self, pin: int) -> tuple[int, int]:
+        """Query a pin's current (mode, value)."""
+        self._send(bytes([START_SYSEX, PIN_STATE_QUERY, pin, END_SYSEX]))
+        return self._await_reply(lambda: self._parser.take_pin_state(pin), "pin state")
+
+    def _await_reply(self, getter: Callable[[], _T | None], what: str) -> _T:
         for _ in range(_MAX_REPLY_READS):
             chunk = self._driver.read(1)
             if not chunk:
                 break
             self._parser.feed(chunk)
-            reply = self._parser.take_i2c_reply(address, register)
-            if reply is not None:
-                return reply
-        raise BoardConnectionError(f"No I2C reply received from address {address}")
+            result = getter()
+            if result is not None:
+                return result
+        raise BoardConnectionError(f"No {what} received from the board")
 
     def tone(self, pin: int, frequency: int, duration: int | None) -> None:
         """StandardFirmata cannot generate tones; raises UnsupportedOperationError."""
