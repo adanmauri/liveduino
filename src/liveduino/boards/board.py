@@ -21,13 +21,11 @@ from liveduino.constants import (
     OUTPUT,
 )
 from liveduino.discovery import (
-    MODE_INPUT,
-    MODE_OUTPUT,
-    MODE_PWM,
     BoardInfo,
     BoardStatus,
     Capabilities,
     PinState,
+    mode_name,
 )
 from liveduino.drivers.base import Driver
 from liveduino.drivers.serial import SerialDriver
@@ -105,8 +103,9 @@ class Board(abc.ABC):
         self._protocol: ProtocolClient | None = None
         self._origin_s = time.monotonic()
         self._wire: Wire | None = None
-        # Per-instance pin capabilities, populated by capabilities() to override
-        # the class-level pin definitions with what the board actually reports.
+        # Capabilities queried from the board, which override the class-level pin
+        # definitions once queryCapabilities() is called (None = use the catalog).
+        self._capabilities: Capabilities | None = None
         self._caps_digital: frozenset[int] | None = None
         self._caps_analog: frozenset[int] | None = None
         self._caps_pwm: frozenset[int] | None = None
@@ -244,33 +243,68 @@ class Board(abc.ABC):
         """Ask the board for its identity: model plus flashed firmware name and version."""
         major, minor, firmware = self._client.report_firmware()
         return BoardInfo(
-            id=self.id, name=self.name, firmware=firmware, firmware_version=f"{major}.{minor}"
+            id=self.id, name=self.name, firmware=firmware, firmwareVersion=f"{major}.{minor}"
         )
 
     def capabilities(self) -> Capabilities:
-        """Query the board's real per-pin capabilities and use them over the catalog."""
-        caps = Capabilities(
-            modes=self._client.capability_query(),
-            analog_channels=self._client.analog_mapping_query(),
-        )
-        self._caps_digital = caps.pins_supporting(MODE_INPUT) | caps.pins_supporting(MODE_OUTPUT)
-        self._caps_pwm = caps.pins_supporting(MODE_PWM)
-        self._caps_analog = frozenset(caps.analog_channels.values())
+        """Return the board's pin capabilities.
+
+        The first time it can reach the firmware it reads the board's real
+        capabilities and caches them (they are never re-requested); until then it
+        falls back to the class/catalog definition as a bypass.
+        """
+        if self._capabilities is not None:
+            return self._capabilities
+        if self._protocol is None:
+            return self._catalog_capabilities()
+        caps = self._fetch_capabilities()
+        self._capabilities = caps
+        self._caps_digital = caps.pinsSupporting("INPUT") | caps.pinsSupporting("OUTPUT")
+        self._caps_pwm = caps.pinsSupporting("PWM")
+        self._caps_analog = frozenset(caps.analogChannels.values())
         return caps
 
+    def _fetch_capabilities(self) -> Capabilities:
+        """Read the board's capabilities from the firmware (one round-trip each)."""
+        return Capabilities(
+            modes={
+                pin: [mode_name(mode) for mode in modes]
+                for pin, modes in self._client.capability_query().items()
+            },
+            analogChannels=self._client.analog_mapping_query(),
+        )
+
     def pinState(self, pin: PinArg) -> PinState:
-        """Ask the board for a pin's current mode and value."""
+        """Ask the board for a pin's current mode (by name) and value."""
         pin = self._resolve_digital_pin(pin)
         mode, value = self._client.pin_state_query(pin)
-        return PinState(pin=pin, mode=mode, value=value)
+        return PinState(pin=pin, mode=mode_name(mode), value=value)
 
     def status(self) -> BoardStatus:
         """Ask the board for a live snapshot: its info plus every pin's current state."""
         pins: dict[int, PinState] = {}
         for pin in self._status_pins():
             mode, value = self._client.pin_state_query(pin)
-            pins[pin] = PinState(pin=pin, mode=mode, value=value)
+            pins[pin] = PinState(pin=pin, mode=mode_name(mode), value=value)
         return BoardStatus(connected=self._protocol is not None, info=self.info(), pins=pins)
+
+    def _catalog_capabilities(self) -> Capabilities:
+        """Build a Capabilities view from the class-level pin definitions."""
+        modes: dict[int, list[str]] = {}
+        for pin in self.digital_pins:
+            pin_modes = ["INPUT", "OUTPUT", "PULLUP"]
+            if self.supports_pwm(pin):
+                pin_modes.append("PWM")
+            modes[pin] = pin_modes
+        analog_channels: dict[int, int] = {}
+        for channel in self.analog_pins:
+            pin = self.first_analog_pin + channel
+            analog_channels[pin] = channel
+            pin_modes = modes.setdefault(pin, [])
+            if channel not in self.analog_only_pins and "INPUT" not in pin_modes:
+                pin_modes[:0] = ["INPUT", "OUTPUT", "PULLUP"]
+            pin_modes.append("ANALOG")
+        return Capabilities(modes=modes, analogChannels=analog_channels)
 
     def _status_pins(self) -> list[int]:
         """Pins to report in status(): the queried digital pins, else the catalog's."""

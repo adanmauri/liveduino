@@ -15,7 +15,7 @@ Public board methods use **camelCase** to match Arduino/Wiring exactly.
 | `i2cWrite(address, data)` | Yes | Write bytes to a 7-bit I2C address |
 | `i2cRead(address, count, register=None, *, restart=False)` | Yes | Read `count` bytes, optionally from a register |
 | `info()` | Yes | Firmware name/version + board identity (`BoardInfo`) |
-| `capabilities()` | Yes | Per-pin supported modes; overrides the catalog (`Capabilities`) |
+| `capabilities()` | Once | Per-pin supported modes; reads the firmware once and caches, else catalog (`Capabilities`) |
 | `pinState(pin)` | Yes | A pin's current mode and value (`PinState`) |
 | `status()` | Yes | Live snapshot of every pin (`BoardStatus`) |
 | `delay` / `delayMicroseconds` | Host | Block on the Python host |
@@ -147,28 +147,43 @@ pin can do, and what state the pins are in right now.
 
 ```python
 board.info()        # -> BoardInfo(id='arduino:uno', name='Arduino UNO',
-                    #              firmware='StandardFirmata', firmware_version='2.5')
+                    #              firmware='StandardFirmata', firmwareVersion='2.5')
 
-board.pinState(13)  # -> PinState(pin=13, mode=1, value=1); .mode_name == 'OUTPUT'
+board.pinState(13)  # -> PinState(pin=13, mode='OUTPUT', value=1)
 
 board.status()      # -> BoardStatus(connected=True, info=..., pins={pin: PinState, ...})
 ```
 
-**`capabilities()` queries the board and then uses what it reports instead of the catalog's
-hardcoded pin map.** After calling it, pin validation (digital / analog / PWM) follows the
-board's own answer:
+Modes are Arduino-style names (`'INPUT'`, `'OUTPUT'`, `'PWM'`, `'SERVO'`, `'ANALOG'`,
+`'I2C'`, `'PULLUP'`, ...), never raw protocol bytes.
+
+**`capabilities()` reads the board's real capabilities from the firmware the first time it
+can, then caches them** (they are never re-requested). Before the board is reachable it
+falls back to the class/catalog definition as a bypass. Once cached, pin validation
+(digital / analog / PWM) follows the board's own answer:
 
 ```python
-caps = board.capabilities()      # -> Capabilities(modes={pin: [mode, ...]}, analog_channels=...)
-caps.supports(9, 0x04)           # does pin 9 support SERVO?
-caps.mode_names(3)               # -> ['INPUT', 'OUTPUT', 'PWM']
-caps.pins_supporting(0x03)       # -> frozenset of PWM-capable pins
+caps = board.capabilities()      # firmware if reachable (cached), else the catalog
+caps.supports(9, 'SERVO')        # does pin 9 support servo?
+caps.pinsSupporting('PWM')       # -> frozenset of PWM-capable pins
+caps.modes[3]                    # -> ['INPUT', 'OUTPUT', 'PULLUP', 'PWM']
 
-board.analogWrite(3, 128)        # now allowed only if the board reported PWM on pin 3
+board.analogWrite(3, 128)        # allowed only if the board reports PWM on pin 3
 ```
 
-`BoardInfo`, `PinState`, `Capabilities`, and `BoardStatus` (and the `mode_name` helper) are
-importable from `liveduino`. Each query is one round-trip; `status()` queries every pin.
+`Capabilities` is a simple record:
+
+```python
+@dataclass(frozen=True)
+class Capabilities:
+    modes: dict[int, list[str]]        # pin -> the mode names it supports
+    analogChannels: dict[int, int]     # pin -> its analog channel index
+    def supports(self, pin: int, mode: str) -> bool: ...
+    def pinsSupporting(self, mode: str) -> frozenset[int]: ...
+```
+
+`BoardInfo`, `PinState`, `Capabilities`, and `BoardStatus` are importable from `liveduino`.
+Each query is one round-trip; `status()` queries every pin.
 
 See also: [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) for how the API maps onto the protocol
 and driver layers.

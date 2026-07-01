@@ -51,7 +51,6 @@ from liveduino.discovery import (
     BoardStatus,
     Capabilities,
     PinState,
-    mode_name,
 )
 from liveduino.drivers import BluetoothDriver, SerialDriver, TcpDriver
 from liveduino.types import BitOrder, DigitalValue, PinMode
@@ -110,5 +109,4 @@ __all__ = [
     "connect",
     "constrain",
     "map_range",
-    "mode_name",
 ]
