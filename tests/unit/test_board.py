@@ -127,19 +127,48 @@ def test_info_returns_firmware_and_identity(board: Board) -> None:
     protocol.firmware = (2, 5, "StandardFirmata")
     info = board.info()
     assert info.firmware == "StandardFirmata"
-    assert info.firmware_version == "2.5"
+    assert info.firmwareVersion == "2.5"
     assert info.id == ArduinoUno.id
     assert info.name == ArduinoUno.name
 
 
 @pytest.mark.unit
-def test_pin_state_returns_mode_and_value(board: Board) -> None:
+def test_pin_state_returns_named_mode_and_value(board: Board) -> None:
     protocol = board._protocol
     assert isinstance(protocol, MockProtocol)
     protocol.pin_states[13] = (0x01, 1)
     state = board.pinState(13)
-    assert (state.pin, state.mode, state.value) == (13, 0x01, 1)
-    assert state.mode_name == "OUTPUT"
+    assert (state.pin, state.mode, state.value) == (13, "OUTPUT", 1)
+
+
+@pytest.mark.unit
+def test_capabilities_bypass_to_catalog_before_connect() -> None:
+    board = ArduinoUno()  # not connected: falls back to the class definition
+    caps = board.capabilities()
+    assert caps.supports(3, "PWM")  # pin 3 is a PWM pin on the UNO
+    assert not caps.supports(2, "PWM")  # pin 2 is not
+    assert caps.supports(13, "OUTPUT")
+    assert caps.analogChannels[14] == 0  # A0 maps to channel 0
+
+
+@pytest.mark.unit
+def test_catalog_capabilities_mark_analog_only_pins() -> None:
+    caps = ArduinoNano().capabilities()  # not connected -> catalog
+    # A6 (channel 6 -> pin 20) is analog-only: ANALOG but not digital.
+    assert caps.supports(20, "ANALOG")
+    assert not caps.supports(20, "OUTPUT")
+
+
+@pytest.mark.unit
+def test_capabilities_fetch_from_firmware_once_and_cache(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    protocol.capabilities = {3: [0x00, 0x01, 0x03], 4: [0x00, 0x01]}
+    protocol.analog_mapping = {18: 4}
+    caps = board.capabilities()
+    assert caps.supports(3, "PWM")
+    assert board.capabilities() is caps  # cached, not re-requested
+    assert sum(1 for call in protocol.calls if call[0] == "capability_query") == 1
 
 
 @pytest.mark.unit
@@ -153,14 +182,13 @@ def test_status_snapshots_every_pin(board: Board) -> None:
 
 
 @pytest.mark.unit
-def test_capabilities_override_the_catalog(board: Board) -> None:
+def test_capabilities_override_pin_validation(board: Board) -> None:
     protocol = board._protocol
     assert isinstance(protocol, MockProtocol)
     # Pin 3 supports PWM, pin 4 only digital; analog channels are 4 and 5.
     protocol.capabilities = {3: [0x00, 0x01, 0x03], 4: [0x00, 0x01]}
     protocol.analog_mapping = {18: 4, 19: 5}
-    caps = board.capabilities()
-    assert caps.supports(3, 0x03)
+    board.capabilities()  # fetch + cache; now drives validation
 
     board.analogWrite(3, 100)  # pin 3 reports PWM -> allowed
     with pytest.raises(InvalidPinError):
@@ -174,7 +202,7 @@ def test_capabilities_override_the_catalog(board: Board) -> None:
 
 
 @pytest.mark.unit
-def test_status_uses_queried_capabilities(board: Board) -> None:
+def test_status_uses_cached_capabilities(board: Board) -> None:
     protocol = board._protocol
     assert isinstance(protocol, MockProtocol)
     protocol.capabilities = {3: [0x00, 0x01], 4: [0x00, 0x01]}

@@ -311,9 +311,9 @@ while Wire.available():
 
 ```python
 board.info()            # firmware name/version + board identity
-board.pinState(13)      # a pin's live mode and value
+board.pinState(13)      # a pin's live mode (by name) and value
 board.status()          # snapshot of every pin
-board.capabilities()    # what each pin really supports — and uses it over the catalog
+board.capabilities()    # per-pin modes: read from the firmware once (cached), else the catalog
 ```
 
 Full method table, analog pin model, and the `map_range` / `constrain` helpers:
