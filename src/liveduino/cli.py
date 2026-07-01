@@ -61,9 +61,10 @@ def _print_table(rows: list[tuple[str, str]]) -> None:
 def _cmd_boards(args: argparse.Namespace) -> int:
     """List boards in the catalog, or the firmwares available for one board."""
     if args.board is None:
-        _print_table(
-            [(board_id, board.name) for board_id, board in sorted(available_boards().items())]
-        )
+        boards = sorted(available_boards().items())
+        if args.vendor is not None:
+            boards = [(bid, b) for bid, b in boards if bid.split(":", 1)[0] == args.vendor]
+        _print_table([(board_id, board.name) for board_id, board in boards])
         return 0
     board = get_board(args.board)
     firmwares = available_firmwares(args.board)
@@ -129,6 +130,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     boards_parser.add_argument(
         "sub", nargs="?", choices=["firmwares"], help=argparse.SUPPRESS
+    )
+    boards_parser.add_argument(
+        "--vendor",
+        choices=sorted({bid.split(":", 1)[0] for bid in available_boards()}),
+        default=None,
+        help="List only boards from this vendor (e.g. arduino, pinguino)",
     )
     boards_parser.set_defaults(handler=_cmd_boards)
 
