@@ -7,6 +7,24 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Servo support over the bundled Servo library: `servoWrite`, `servoConfig`.
+- I2C support: batched `i2cConfig` / `i2cWrite` / `i2cRead`, an Arduino `Wire`-style layer
+  (`board.wire`), and continuous reads (`i2cReadContinuous` / `i2cValue` / `i2cStopReading`).
+- Board discovery: `info()` (firmware + identity), `capabilities()` (read from the firmware
+  once, cached, and used over the catalog's pin map), `pinState(pin)`, and `status()`.
+- `samplingInterval(ms)` to control the board's auto-report rate.
+- `readString()` to read text messages the board emits (e.g. I2C errors).
+- Serial relay `board.serial(port)`, mirroring Arduino's `HardwareSerial`
+  (`begin` / `write` / `available` / `read` / `end`).
+- `reset()` (Firmata SYSTEM_RESET) to return the board to its power-on state.
+
+### Fixed
+
+- PWM and servo writes on pins above 15 now use EXTENDED_ANALOG; they previously wrapped to
+  the wrong channel.
+
 ## [0.1.0]
 
 Initial release.

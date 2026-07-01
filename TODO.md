@@ -2,6 +2,20 @@
 
 Items not implemented yet. Add entries when scope is agreed; link to issues when they exist.
 
+## Protocol / API (StandardFirmata)
+
+- [x] Digital/analog I/O, PWM, and host-side timing
+- [x] Servo (`servoWrite`, `servoConfig`)
+- [x] I2C: `i2cConfig`/`i2cWrite`/`i2cRead`, Arduino `Wire` layer, continuous reads
+- [x] Extended analog (PWM/servo on pins above 15)
+- [x] Discovery: `info`, `capabilities` (cached, overrides the catalog), `pinState`, `status`
+- [x] `samplingInterval`, `readString` (board messages), serial relay (`board.serial`)
+- [x] `reset` (SYSTEM_RESET)
+- [ ] `tone` / `noTone` / `pulseIn` / `shiftOut` / `shiftIn` — not defined by the Firmata
+      protocol (absent from StandardFirmata and StandardFirmataPlus). Needs custom firmware:
+      a StandardFirmata/ConfigurableFirmata build with a bespoke sysex per function plus the
+      matching sysex on the client. See `docs/ARCHITECTURE.md`.
+
 ## Boards
 
 - [x] ATmega328 family: UNO, Nano, Mini, Pro/Pro Mini, Fio, Duemilanove/Diecimila, Ethernet, BT, LilyPad, UNO Mini
