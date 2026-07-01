@@ -32,6 +32,9 @@ driver.
 | `src/liveduino/constants.py` | Arduino constants (`HIGH`, `LOW`, `INPUT`, …, and analog pins `A0`-`A20`) |
 | `src/liveduino/types.py` | Arduino value types (`PinMode`, `DigitalValue`, `BitOrder`) |
 | `src/liveduino/utilities.py` | Host value utilities (`map_range`, `constrain`) |
+| `src/liveduino/discovery.py` | Discovery value types (`BoardInfo`, `PinState`, `Capabilities`, `BoardStatus`) |
+| `src/liveduino/i2c.py` | Arduino `Wire`-style I2C layer (`board.wire`) |
+| `src/liveduino/serial_relay.py` | Arduino `HardwareSerial`-style serial-relay port (`board.serial`) |
 | `src/liveduino/boards/board.py` | `Board` abstract base class (Arduino API incl. host timing, pin map, capabilities, `connect`) |
 | `src/liveduino/boards/catalog/` | One `Board` subclass per board (e.g. `ArduinoUno`), auto-discovered |
 | `src/liveduino/boards/registry.py` | Auto-discovery + lookup (`get_board`, `available_boards`) |
@@ -41,7 +44,7 @@ driver.
 | `firmware/` | Setup docs and future MCU firmware (Pinguino live interpreter) |
 | [github.com/adanmauri/frameduino](https://github.com/adanmauri/frameduino) | Original Frameduino 0.x Python 2 code and Pinguino `.pde` |
 
-## MVP data flow (Arduino UNO)
+## Data flow (Arduino UNO)
 
 1. `ArduinoUno()` picks the board's protocol (`FirmataProtocol` by default; override at instantiation with `ArduinoUno(protocol=...)`). `.connect(port)` then builds a `SerialDriver(port)` (or uses the `driver=TcpDriver(...)` / `driver=BluetoothDriver(...)` you pass), wraps it in the chosen protocol, and opens the connection. The **protocol** is a property of the board instance; the **driver** is how it is connected.
 2. `board.pinMode(13, OUTPUT)` validates pin 13 against the `ArduinoUno` pin map, then calls `protocol.pin_mode`.
@@ -73,9 +76,31 @@ Boards may also declare `reserved_pins`: digital pins wired to onboard hardware
 (e.g. pins 10-13 on the Arduino Ethernet, used by the W5100 over SPI). Any I/O
 on a reserved pin (digital or PWM) raises `InvalidPinError`.
 
-## Device functions and StandardFirmata limits
+## What StandardFirmata covers
 
-`tone`, `noTone`, `pulseIn`, `shiftOut`, and `shiftIn` exist on `Board` for API fidelity, but StandardFirmata cannot perform them, so `FirmataProtocol` raises `UnsupportedOperationError`. A future `LiveProtocol` (or custom firmware) can implement them without changing the public API.
+`FirmataProtocol` implements the full StandardFirmata command surface: digital and
+analog I/O, PWM and `servoWrite` (extended-analog for pins above 15), I2C (a batched
+API plus an Arduino `Wire` layer, one-shot and continuous reads), the serial relay
+(`board.serial`, Arduino `HardwareSerial` style), `samplingInterval`, board string
+messages (`readString`), the discovery queries (`info`, `capabilities`, `pinState`,
+`status`), and `reset` (SYSTEM_RESET).
+
+`capabilities()` deserves a note: it reads the board's real per-pin modes from the
+firmware once and caches them, then those override the catalog's hardcoded pin map
+for validation; until the board is reachable it falls back to the catalog.
+
+## Not supported: tone / pulseIn / shift
+
+`tone`, `noTone`, `pulseIn`, `shiftOut`, and `shiftIn` exist on `Board` for API
+fidelity, but **the Firmata protocol does not define them** — they are absent from
+StandardFirmata *and* StandardFirmataPlus — so `FirmataProtocol` raises
+`UnsupportedOperationError`.
+
+**Roadmap (TODO):** supporting them is not a matter of bundling a "Plus" image; it
+needs custom firmware — a StandardFirmata (or ConfigurableFirmata) build with a
+bespoke sysex for each function, plus the matching sysex on the client. A future
+`LiveProtocol` (or that custom firmware) can implement them without changing the
+public API.
 
 ## Drivers
 

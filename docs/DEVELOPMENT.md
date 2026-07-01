@@ -11,14 +11,18 @@ make check              # lint + type-check + 100% coverage gate
 
 | Target | What it does |
 | --- | --- |
-| `make install-dev` | Install all deps (incl. dev) + pre-commit hooks |
+| `make install-dev` | Install all deps (incl. dev) + pre-commit hooks + firmware toolchain |
 | `make lint` | ruff, flake8, pylint |
 | `make type-check` | mypy, pyright |
 | `make security` | bandit |
+| `make format` | black, isort, ruff --fix |
+| `make check` | lint + type-check + 100% coverage gate |
 | `make test-coverage` | Unit tests with 100% coverage gate |
 | `make test-integration` | Integration tests (requires `LIVEDUINO_PORT`) |
 | `make build` | Build the wheel |
-| `make firmware` | Rebuild the bundled StandardFirmata hex (requires arduino-cli) |
+| `make firmware-setup` | Install the pinned arduino-cli core + libraries |
+| `make firmware` | Rebuild the bundled StandardFirmata hex (needs `firmware-setup`) |
+| `make actions ls` / `make actions workflow-<name>` | List / trigger a GitHub Actions workflow via `gh` |
 
 Integration tests (real hardware):
 
@@ -49,19 +53,32 @@ e.g. `standardfirmata-uno.hex`, `standardfirmataethernet-ethernet.hex`) plus
 instead of failing: the primary image only when it does not fit on the board, and
 extra variants whenever they need an uninstalled library or
 per-deployment config (`StandardFirmataEthernet` needs the `Ethernet` library;
-`StandardFirmataWiFi` needs a configured `wifiConfig.h`). It requires `arduino-cli`
-on PATH plus the `arduino:avr` core and the `Firmata`, `Servo`, and (for the
-Ethernet variant) `Ethernet` libraries:
+`StandardFirmataWiFi` needs a configured `wifiConfig.h`).
+
+`make firmware-setup` installs the **pinned** toolchain the build expects
+(`arduino:avr` core plus the `Firmata`, `Servo`, and `Ethernet` libraries — exact
+versions live in the `Makefile`, shared verbatim with CI). It also installs
+`arduino-cli` itself via Homebrew if missing:
 
 ```bash
-arduino-cli core install arduino:avr
-arduino-cli lib install Firmata Servo Ethernet
+make firmware-setup
 make firmware
 ```
 
-The `Firmware` GitHub workflow does the same in CI: it fails a pull request whose
-bundled firmware is out of date, and can regenerate the images on demand
-(`workflow_dispatch`) by opening a pull request.
+**Important — firmware is a CI/Linux artifact.** The bundled `.hex` are not
+byte-reproducible across operating systems: the `avr-gcc` in the `arduino:avr`
+core differs between macOS and Linux, so a macOS build will not match the
+Linux build CI verifies against — even with identical pinned versions. So the
+committed images must come from Linux. Do **not** commit locally-built firmware;
+regenerate it in CI instead:
+
+```bash
+make actions workflow-firmware   # runs the Firmware workflow (workflow_dispatch)
+```
+
+The `regenerate` job compiles on Linux and pushes a `firmware/rebuild` branch (it
+opens a PR too if the repo allows Actions to create PRs). The `verify` job fails a
+push/PR whose bundled firmware is out of date.
 
 Coding standards and guardrails for contributors (and AI agents) live in
 [`AGENTS.md`](../AGENTS.md). Architecture details are in
