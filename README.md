@@ -51,7 +51,6 @@ from scratch for Python 3.13.*
 - [How it works](#how-it-works)
 - [Tech stack](#tech-stack)
 - [Arduino API](#arduino-api)
-- [Firmware variants](#firmware-variants)
 - [Supported boards](#supported-boards)
 - [Connections](#connections)
 - [Command-line interface](#command-line-interface)
@@ -135,22 +134,10 @@ know.
 
 ### Prerequisites
 
-**Host**
-
-| Requirement | macOS | Windows | Linux |
-| --- | --- | --- | --- |
-| **Python 3.13+** | [python.org](https://www.python.org/downloads/) or `brew install python@3.13` | [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3.13` | Your distro or [python.org](https://www.python.org/downloads/) |
-
-Python 3.13+ is the only thing you need to *use* liveduino. [uv](https://docs.astral.sh/uv/)
-is optional (handy if you already use it) and only required to *develop* liveduino.
-
-**Board** (Arduino UNO or compatible)
-
-1. Connect the board via USB.
-2. Note its serial port (`/dev/ttyACM0` on Linux, `/dev/cu.usbmodem*` on macOS, `COM3` on Windows). Run `liveduino-cli ports` to list them.
-
-That is it. **No Arduino IDE, no avrdude, no toolchain.** liveduino flashes the firmware
-for you in the next step.
+**Python 3.13+** is all you need to *use* liveduino ([uv](https://docs.astral.sh/uv/) is only
+for developing it). Connect an Arduino UNO (or compatible) via USB and note its serial port
+(`liveduino-cli ports` lists them). **No Arduino IDE, no avrdude, no toolchain** — liveduino
+flashes the firmware for you next.
 
 ### Install
 
@@ -242,15 +229,10 @@ Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Tech stack
 
-| Layer | Tools |
-| --- | --- |
-| **Runtime** | Python 3.13+ |
-| **Tooling (dev only)** | [uv](https://docs.astral.sh/uv/) |
-| **User API** | `Board` subclasses with camelCase Arduino methods |
-| **Protocol** | Native `FirmataProtocol` (StandardFirmata 2.x, stdlib only) |
-| **Transport** | [pyserial](https://pyserial.readthedocs.io/) (serial); stdlib sockets (TCP, Bluetooth RFCOMM) |
-| **Firmware** | StandardFirmata on the board |
-| **Quality** | pytest (100% coverage), ruff, flake8, pylint, mypy, pyright, bandit |
+**Python 3.13+**, stdlib-only ([pyserial](https://pyserial.readthedocs.io/) for serial;
+stdlib sockets for TCP/Bluetooth). `Board` subclasses expose camelCase Arduino methods over a
+native `FirmataProtocol` (StandardFirmata 2.x — no third-party Firmata library). Quality gate:
+pytest at 100% coverage, ruff, flake8, pylint, mypy, pyright, bandit.
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
@@ -298,29 +280,6 @@ board.capabilities()  # per-pin modes read from the firmware (cached), else the 
 ```
 
 Full method table, servo/I2C/discovery/serial details, and helpers: [`docs/API.md`](docs/API.md).
-
-<p align="right">(<a href="#table-of-contents">back to top</a>)</p>
-
-## Firmware variants
-
-The Firmata family ships several firmware sketches. liveduino bundles and flashes
-**StandardFirmata** by default (it covers digital/analog I/O, PWM, and servo on a plain
-USB-serial board) and also bundles **StandardFirmataEthernet** for the Ethernet board. Here
-is how they compare, so you know what each one buys you:
-
-| Firmware | Transport | Digital/Analog/PWM | Servo | Extra | liveduino |
-| --- | --- | --- | --- | --- | --- |
-| **StandardFirmata** | Serial | ✅ | ✅ | — | ✅ default |
-| **StandardFirmataPlus** | Serial | ✅ | ✅ | I2C, OneWire, stepper, frequency | not bundled |
-| **StandardFirmataEthernet** | Ethernet (TCP) | ✅ | ✅ | network transport | ✅ bundled extra |
-| **StandardFirmataWiFi** | Wi-Fi (TCP) | ✅ | ✅ | needs `wifiConfig.h` | not bundled |
-| **StandardFirmataBLE** | Bluetooth LE | ✅ | ✅ | needs BLE config | not bundled |
-| **ConfigurableFirmata** | Serial / net | ✅ | ✅ | modular: DHT, stepper, I2C, SPI, encoder | not bundled |
-
-liveduino's client speaks the base Firmata 2.x wire protocol, which all of these share for
-core I/O and servo, so it can talk to any StandardFirmata build already on your board. The
-richer variants (Plus / ConfigurableFirmata) add features that need extra client support
-before liveduino can drive them.
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
