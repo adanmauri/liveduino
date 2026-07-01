@@ -109,10 +109,25 @@ know.
 | | liveduino | pyFirmata / Telemetrix | MicroPython |
 | --- | --- | --- | --- |
 | **API style** | Arduino/Wiring (`pinMode`, `digitalWrite`) | Library-specific | Python on device |
+| **I2C / serial API** | Arduino `Wire` / `Serial1` | Library-specific | Native Python |
 | **Code runs on** | Host Python | Host Python | Microcontroller |
-| **Firmware** | StandardFirmata | Firmata / custom | MicroPython |
+| **Firmware** | Stock StandardFirmata | Firmata / a custom sketch | MicroPython |
 | **Flashing** | Built in, pure Python (no Arduino IDE) | Arduino IDE / avrdude | esptool / external tool |
+| **Transports** | USB, Wi-Fi/Ethernet, Bluetooth (swap the driver) | Serial (mostly) | On-device |
 | **Learning curve for Arduino users** | Zero | New API | New language |
+
+**What only liveduino does:**
+
+- **The Arduino API all the way down.** Not just `pinMode`/`digitalWrite`: `board.wire`
+  *is* Arduino's `Wire`, `board.serial(1)` *is* `Serial1` (same `begin`/`write`/`available`/
+  `read`/`end`), plus `servoWrite`, `analogRead`, timing. A sketch ports almost line for line.
+- **Runs on the StandardFirmata that's already everywhere.** No custom firmware to build or
+  maintain (Telemetrix needs its own); if the board already has StandardFirmata, liveduino
+  just talks to it — and flashes it for you in pure Python if it doesn't.
+- **The board self-describes.** `capabilities()` reads each pin's real modes from the
+  firmware and uses them over the hardcoded catalog.
+- **One API over any wire.** Swap USB, Wi-Fi/Ethernet, or Bluetooth by changing a single
+  line, never your code.
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
