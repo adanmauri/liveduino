@@ -1,20 +1,15 @@
-"""Pinguino 4550 board.
+"""Pinguino 4550 board (PIC18F4550, 40-pin).
 
-8-bit Pinguino board (PIC18F4550) controlled over USB serial. It runs the
-``PinguinoFirmata`` firmware (``firmware/pinguino/firmata/``), which speaks the
-same Firmata wire protocol as StandardFirmata, so liveduino drives it with the
-native ``FirmataProtocol`` — no client changes.
-
-``fqbn`` is ``None``: the firmware is built with the Pinguino IDE, not
-arduino-cli, so there is no bundled hex to flash. Flash ``PinguinoFirmata`` with
-Pinguino's own tools; liveduino then just talks Firmata over the serial port.
-
-The pin map below is a **fallback**. The firmware answers the Firmata capability
-query, so ``board.capabilities()`` reads the board's real per-pin modes from the
-hardware and uses them over this catalog definition.
+8-bit Pinguino controlled over USB serial, running the ``PinguinoFirmata``
+firmware (``firmware/pinguino/firmata/``), which speaks the same Firmata wire
+protocol as StandardFirmata. liveduino drives it with the native
+``FirmataProtocol``. ``fqbn`` is ``None``: flash the firmware with Pinguino's own
+tools. The pin map is a fallback, refined at runtime by the firmware's capability
+query.
 """
 
 from liveduino.boards.board import Board
+from liveduino.boards.pinguino import ANALOG_40, DIGITAL_40, PINGUINO_BAUD, PWM_TWO
 
 
 class Pinguino4550(Board):
@@ -23,8 +18,7 @@ class Pinguino4550(Board):
     id = "pinguino:4550"
     name = "Pinguino 4550"
     firmware_sketch = "PinguinoFirmata"
-    # Provisional map; refined at runtime by the firmware's capability query.
-    digital_pins = range(30)
-    analog_pins = range(13)
-    pwm_pins = frozenset({11, 12})  # CCP1 / CCP2
-    default_baud = 115200  # USB CDC ignores the rate, but the driver needs one
+    digital_pins = DIGITAL_40
+    analog_pins = ANALOG_40
+    pwm_pins = PWM_TWO
+    default_baud = PINGUINO_BAUD

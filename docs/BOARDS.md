@@ -21,11 +21,18 @@
 | MKR1000 | Planned | Firmata | StandardFirmataWiFi |
 | MKR WiFi 1010 | Planned | Firmata | StandardFirmataWiFi |
 | Nano 33 IoT | Planned | Firmata | StandardFirmataWiFi |
-| Pinguino 4550 (PIC18F) | Experimental | Firmata | PinguinoFirmata (firmware untested on hardware) |
+| Pinguino 14K50 / 2455 / 2550 / 2553 / 25K50 / 26J50 / 27J53 (PIC18F) | Experimental | Firmata | PinguinoFirmata |
+| Pinguino 4455 / 4550 / 4553 / 45K50 / 46J50 / 47J53 (PIC18F) | Experimental | Firmata | PinguinoFirmata |
 
-All ids use the `arduino:<model>` form (e.g. `arduino:nano`, `arduino:pro`,
-`arduino:diecimila`). Each board profile only declares its pin map and
-capabilities; the protocol (Firmata) and driver (serial/TCP/Bluetooth) are shared.
+Arduino ids use the `arduino:<model>` form (e.g. `arduino:nano`); Pinguino ids use
+`pinguino:<model>` (e.g. `pinguino:4550`, `pinguino:25k50`). Each board profile only
+declares its pin map and capabilities; the protocol (Firmata) and driver
+(serial/TCP/Bluetooth) are shared.
+
+The 8-bit Pinguino (PIC18F) boards run [`PinguinoFirmata`](../firmware/pinguino/firmata/),
+which speaks Firmata so liveduino drives them with the same `FirmataProtocol`. Their pin
+maps are provisional per-package fallbacks, refined at runtime by the firmware's capability
+query; the firmware is untested on hardware.
 
 The Firmware column lists the sketch `liveduino-cli flash` bundles and writes over the serial
 bootloader, so it is the serial StandardFirmata image. A board may also ship extra firmware
