@@ -11,12 +11,7 @@ Public board methods use **camelCase** to match Arduino/Wiring exactly.
 | `analogWrite(pin, value)` | Yes | PWM duty cycle (`0`-`255`) on a PWM pin |
 | `servoWrite(pin, angle)` | Yes | Attach a servo and move it to an angle (`0`-`180`°) |
 | `servoConfig(pin, minPulse, maxPulse)` | Yes | Set a servo's min/max pulse width (µs) before writing |
-| `i2cConfig(delay=0)` | Yes | Enable the I2C bus (optional read delay in µs) |
-| `i2cWrite(address, data)` | Yes | Write bytes to a 7-bit I2C address |
-| `i2cRead(address, count, register=None, *, restart=False)` | Yes | Read `count` bytes, optionally from a register |
-| `i2cReadContinuous(address, count, register=None)` | Yes | Keep reporting a register until stopped |
-| `i2cValue(address, register=None)` | Yes | Latest continuously-reported reply (or `None`) |
-| `i2cStopReading(address)` | Yes | Stop a continuous read |
+| `wire` | Yes | Arduino `Wire` I2C interface (`begin`, `beginTransmission`/`write`/`endTransmission`, `requestFrom`/`available`/`read`) |
 | `samplingInterval(ms)` | Yes | How often the board auto-reports analog / continuous I2C |
 | `readString()` | Yes | Latest text message from the board (e.g. an error), or `None` |
 | `serial(port)` | Yes | A serial-relay port (Arduino `Serial1`/`Serial2`/...) |
@@ -61,105 +56,54 @@ board.servoWrite(9, 180)
 
 Servo works on any digital pin (including `A0`-`A5`), not only PWM pins.
 
-## I2C
+## I2C (`board.wire`)
 
-StandardFirmata bundles the Arduino `Wire` library, so liveduino can act as an I2C master
-over the same connection. Enable the bus once with `i2cConfig`, then read and write.
-
-**Is it the same as Arduino?** Not byte-for-byte. Arduino models I2C as a stateful `Wire`
-object (`beginTransmission` / `write` / `endTransmission`, then `requestFrom` / `read`).
-liveduino exposes a higher-level, batched API over Firmata instead. The behaviour maps
-directly:
-
-| Arduino `Wire` | liveduino | Notes |
-| --- | --- | --- |
-| `Wire.begin()` | `board.i2cConfig()` | Call once before any transfer |
-| `Wire.beginTransmission(a)` → `write(b)`… → `endTransmission()` | `board.i2cWrite(a, [b, …])` | One batched write |
-| `Wire.requestFrom(a, n)` → `read()`… | `board.i2cRead(a, n)` | Returns `bytes` |
-| write register, then `requestFrom` | `board.i2cRead(a, n, register=r)` | Register read in one call |
-| `endTransmission(false)` (repeated start) | `board.i2cRead(a, n, restart=True)` | Restart instead of stop |
-
-`address` is a 7-bit address (`0`-`0x7F`), data bytes are `0`-`255`, and 10-bit addressing
-is not supported (a StandardFirmata limitation).
-
-### Enable the bus
+I2C is the Arduino `Wire` library, so liveduino exposes it as `board.wire` — the exact same
+calls. A sketch ports almost verbatim; alias it once (`Wire = board.wire`, in place of
+`#include <Wire.h>`) and the rest is identical:
 
 ```python
-board.i2cConfig()       # like Wire.begin()
-board.i2cConfig(1000)   # optional: 1000 µs delay between a write and the following read
-```
-
-### Write
-
-```python
-# Wake an MPU-6050: write 0x00 into the power-management register 0x6B.
-board.i2cWrite(0x68, [0x6B, 0x00])
-```
-
-### Read
-
-```python
-# Plain read of 2 bytes (device's current register pointer).
-raw = board.i2cRead(0x68, 2)            # -> b'\x12\x34'
-
-# Read 6 bytes starting at register 0x3B (MPU-6050 accelerometer block).
-accel = board.i2cRead(0x68, 6, register=0x3B)
-
-# Repeated-start read (no stop between the register write and the read).
-data = board.i2cRead(0x68, 2, register=0x3B, restart=True)
-```
-
-`i2cRead` blocks until the board sends the matching I2C reply and returns it as `bytes`; it
-raises `BoardConnectionError` if no reply arrives.
-
-### Arduino `Wire`-style API
-
-If you prefer the exact Arduino `Wire` calls, use `board.wire`. It mirrors the stateful
-`Wire` library line for line, so a sketch ports almost verbatim:
-
-| Method | Arduino equivalent | What it does |
-| --- | --- | --- |
-| `board.wire.begin()` | `Wire.begin()` | Enable the bus |
-| `board.wire.beginTransmission(addr)` | `Wire.beginTransmission(addr)` | Start buffering a write |
-| `board.wire.write(byte_or_bytes)` | `Wire.write(...)` | Queue one byte or a sequence |
-| `board.wire.endTransmission()` | `Wire.endTransmission()` | Send the buffer; returns `0` |
-| `board.wire.requestFrom(addr, n)` | `Wire.requestFrom(addr, n)` | Request `n` bytes; returns the count |
-| `board.wire.available()` | `Wire.available()` | Bytes left to read |
-| `board.wire.read()` | `Wire.read()` | Next byte, or `-1` when empty |
-
-```python
-# Read 6 accelerometer bytes from an MPU-6050, Arduino style.
-board.wire.begin()
-
-board.wire.beginTransmission(0x68)
-board.wire.write(0x3B)              # point at register 0x3B
-board.wire.endTransmission()
-
-board.wire.requestFrom(0x68, 6)
-values = []
-while board.wire.available():
-    values.append(board.wire.read())
-```
-
-For an even closer port, alias it once and your code reads exactly like an Arduino sketch —
-`Wire = board.wire` stands in for `#include <Wire.h>`, and the rest is identical:
-
-```python
-Wire = board.wire          # in place of: #include <Wire.h>
+Wire = board.wire
 
 Wire.begin()
+
+# Wake an MPU-6050: write 0x00 into register 0x6B.
 Wire.beginTransmission(0x68)
-Wire.write(0x3B)
+Wire.write(0x6B)
+Wire.write(0x00)
 Wire.endTransmission()
-Wire.requestFrom(0x68, 6)
+
+# Read 6 accelerometer bytes starting at register 0x3B.
+Wire.requestFrom(0x68, 6, 0x3B)     # register overload -> one efficient transaction
+values = []
 while Wire.available():
-    value = Wire.read()
+    values.append(Wire.read())
 ```
 
-Caveats versus real Arduino: addresses are 7-bit only, and `endTransmission(stop)` accepts
-the `stop` flag for compatibility but StandardFirmata always ends a write with a stop, so a
-guaranteed repeated-start register read is best done with `i2cRead(addr, n, register=r,
-restart=True)`.
+| `Wire` method | Arduino | Notes |
+| --- | --- | --- |
+| `begin()` | `Wire.begin()` | Enable the bus |
+| `beginTransmission(a)` / `write(b)` / `endTransmission()` | same | Buffered write; `endTransmission` returns `0` |
+| `requestFrom(a, n)` | `Wire.requestFrom(a, n)` | Request `n` bytes; returns the count |
+| `requestFrom(a, n, register)` | `Wire.requestFrom(a, n, iaddress, ...)` | Register read in one transaction |
+| `requestFrom(a, n, sendStop=False)` | `Wire.requestFrom(..., false)` | Repeated start instead of stop |
+| `available()` / `read()` | same | `read()` returns the next byte, or `-1` |
+
+Addresses are 7-bit (`0`-`0x7F`), data bytes are `0`-`255`; 10-bit addressing is not
+supported (a StandardFirmata limit). `endTransmission(stop)` accepts the `stop` flag for
+compatibility but a write always ends with a stop, so for a guaranteed repeated-start
+register read use `requestFrom(a, n, register, sendStop=False)`.
+
+### Continuous reads (Firmata extension)
+
+Arduino `Wire` has no equivalent: the board keeps reporting a register on its own (at the
+`samplingInterval` rate) and you poll the latest value.
+
+```python
+board.wire.readContinuous(0x68, 6, register=0x3B)
+data = board.wire.value(0x68, register=0x3B)   # latest block, or None yet
+board.wire.stopReading(0x68)
+```
 
 ## Discovery
 
@@ -209,14 +153,11 @@ Each query is one round-trip; `status()` queries every pin.
 
 ## Streaming and serial
 
-**Continuous I2C.** Instead of a request per read, ask the board to keep reporting a register
-and poll the latest value. The report rate follows `samplingInterval`:
+**Sampling interval.** Set how often the board auto-reports analog inputs and continuous
+I2C reads (see [I2C continuous reads](#continuous-reads-firmata-extension)):
 
 ```python
-board.samplingInterval(20)                     # report every 20 ms
-board.i2cReadContinuous(0x68, 6, register=0x3B)
-data = board.i2cValue(0x68, register=0x3B)     # latest block, or None yet
-board.i2cStopReading(0x68)
+board.samplingInterval(20)   # report every 20 ms
 ```
 
 **Board messages.** StandardFirmata sends text (e.g. `"I2C: Too many bytes received"`) as

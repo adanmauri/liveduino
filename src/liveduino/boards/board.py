@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import abc
 import time
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from typing import ClassVar, Self
 
 from liveduino.constants import (
@@ -220,32 +220,6 @@ class Board(abc.ABC):
             )
         self._client.servo_config(pin, minPulse, maxPulse)
 
-    def i2cConfig(self, delay: int = 0) -> None:
-        """Enable the I2C bus, optionally setting the read delay in microseconds."""
-        self._client.i2c_config(delay)
-
-    def i2cWrite(self, address: int, data: Iterable[int]) -> None:
-        """Write a sequence of bytes to the I2C device at a 7-bit address."""
-        self._client.i2c_write(address, data)
-
-    def i2cRead(
-        self, address: int, count: int, register: int | None = None, *, restart: bool = False
-    ) -> bytes:
-        """Read count bytes from an I2C device, optionally starting at a register."""
-        return self._client.i2c_read(address, count, register, restart=restart)
-
-    def i2cReadContinuous(self, address: int, count: int, register: int | None = None) -> None:
-        """Ask an I2C device to keep reporting count bytes until stopped."""
-        self._client.i2c_read_continuous(address, count, register)
-
-    def i2cValue(self, address: int, register: int | None = None) -> bytes | None:
-        """Return the latest continuously-reported reply from an I2C device, or None."""
-        return self._client.i2c_value(address, register)
-
-    def i2cStopReading(self, address: int) -> None:
-        """Stop a continuous read previously started for an I2C device."""
-        self._client.i2c_stop_reading(address)
-
     def samplingInterval(self, milliseconds: int) -> None:
         """Set how often the board auto-reports analog inputs and continuous I2C reads."""
         self._client.sampling_interval(milliseconds)
@@ -262,9 +236,9 @@ class Board(abc.ABC):
 
     @property
     def wire(self) -> Wire:
-        """Arduino ``Wire``-style I2C interface bound to this board."""
+        """Arduino ``Wire``-style I2C interface (the board's whole I2C API)."""
         if self._wire is None:
-            self._wire = Wire(self)
+            self._wire = Wire(self._client)
         return self._wire
 
     def info(self) -> BoardInfo:

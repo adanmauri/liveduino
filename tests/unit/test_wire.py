@@ -1,8 +1,4 @@
-"""Unit tests for the Arduino Wire-style I2C layer.
-
-Exercise the stateful ``Wire`` API (begin, beginTransmission/write/
-endTransmission, requestFrom/available/read) over a mock protocol.
-"""
+"""Unit tests for the Arduino Wire-style I2C layer (the board's whole I2C API)."""
 
 from __future__ import annotations
 
@@ -67,10 +63,28 @@ def test_request_from_and_read(board: Board) -> None:
 
 
 @pytest.mark.unit
+def test_request_from_register(board: Board) -> None:
+    _protocol(board).i2c_reply = bytes([0x11])
+    assert board.wire.requestFrom(0x68, 1, register=0x3B) == 1
+    assert ("i2c_read", (0x68, 1, 0x3B, False)) in _protocol(board).calls
+
+
+@pytest.mark.unit
 def test_request_from_repeated_start(board: Board) -> None:
     _protocol(board).i2c_reply = bytes([0x01])
-    board.wire.requestFrom(0x68, 1, stop=False)
+    board.wire.requestFrom(0x68, 1, sendStop=False)
     assert ("i2c_read", (0x68, 1, None, True)) in _protocol(board).calls
+
+
+@pytest.mark.unit
+def test_continuous_read_value_and_stop(board: Board) -> None:
+    protocol = _protocol(board)
+    protocol.i2c_latest = bytes([0xAB, 0xCD])
+    board.wire.readContinuous(0x68, 6, register=0x3B)
+    assert board.wire.value(0x68, register=0x3B) == bytes([0xAB, 0xCD])
+    board.wire.stopReading(0x68)
+    assert ("i2c_read_continuous", (0x68, 6, 0x3B)) in protocol.calls
+    assert ("i2c_stop_reading", (0x68,)) in protocol.calls
 
 
 @pytest.mark.unit
