@@ -383,6 +383,10 @@ class Board(abc.ABC):
         """Return microseconds elapsed since this board connection started."""
         return int((time.monotonic() - self._origin_s) * 1_000_000.0)
 
+    def reset(self) -> None:
+        """Reset the board to its power-on Firmata state (pins default, reporting off)."""
+        self._client.system_reset()
+
     def close(self) -> None:
         """Disconnect from the board."""
         if self._protocol is not None:

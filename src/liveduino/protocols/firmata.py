@@ -38,6 +38,7 @@ SET_DIGITAL_PIN_VALUE = 0xF5
 REPORT_VERSION = 0xF9
 START_SYSEX = 0xF0
 END_SYSEX = 0xF7
+SYSTEM_RESET = 0xFF
 
 # Firmata sysex sub-commands
 SERIAL_MESSAGE = 0x60
@@ -334,6 +335,13 @@ class FirmataProtocol:
         if self._connected:
             self._driver.close()
         self._connected = False
+        self._digital_reporting.clear()
+        self._analog_reporting.clear()
+        self._parser.reset()
+
+    def system_reset(self) -> None:
+        """Reset the board's Firmata state (pins to default, reporting cleared)."""
+        self._send(bytes([SYSTEM_RESET]))
         self._digital_reporting.clear()
         self._analog_reporting.clear()
         self._parser.reset()

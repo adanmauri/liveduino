@@ -20,6 +20,7 @@ Public board methods use **camelCase** to match Arduino/Wiring exactly.
 | `samplingInterval(ms)` | Yes | How often the board auto-reports analog / continuous I2C |
 | `readString()` | Yes | Latest text message from the board (e.g. an error), or `None` |
 | `serial(port)` | Yes | A serial-relay port (Arduino `Serial1`/`Serial2`/...) |
+| `reset()` | Yes | Reset the board's Firmata state (pins default, reporting off) |
 | `info()` | Yes | Firmware name/version + board identity (`BoardInfo`) |
 | `capabilities()` | Once | Per-pin supported modes; reads the firmware once and caches, else catalog (`Capabilities`) |
 | `pinState(pin)` | Yes | A pin's current mode and value (`PinState`) |

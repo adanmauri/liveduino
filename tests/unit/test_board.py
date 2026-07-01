@@ -139,6 +139,14 @@ def test_i2c_value_delegates(board: Board) -> None:
 
 
 @pytest.mark.unit
+def test_reset_delegates(board: Board) -> None:
+    board.reset()
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    assert ("system_reset", ()) in protocol.calls
+
+
+@pytest.mark.unit
 def test_sampling_interval_delegates(board: Board) -> None:
     board.samplingInterval(50)
     protocol = board._protocol

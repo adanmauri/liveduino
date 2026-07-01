@@ -26,6 +26,10 @@ class ProtocolClient(Protocol):
         """Close the protocol session."""
         ...
 
+    def system_reset(self) -> None:
+        """Reset the board's Firmata state (pins to default, reporting cleared)."""
+        ...
+
     def pin_mode(self, pin: int, mode: PinMode) -> None:
         """Configure a digital pin mode."""
         ...

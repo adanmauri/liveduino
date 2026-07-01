@@ -39,6 +39,7 @@ from liveduino.protocols.firmata import (
     SET_PIN_MODE,
     START_SYSEX,
     STRING_DATA,
+    SYSTEM_RESET,
     FirmataProtocol,
 )
 from tests.shared.fake_driver import FakeDriver
@@ -481,6 +482,17 @@ def test_serial_close_encodes_request() -> None:
     protocol, driver = _connected()
     protocol.serial_close(1)
     assert bytes(driver.written) == bytes([START_SYSEX, SERIAL_MESSAGE, 0x50 | 1, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_system_reset_sends_command_and_clears_reporting() -> None:
+    protocol, driver = _connected()
+    protocol.digital_read(2)  # enables digital reporting for port 0
+    protocol.system_reset()
+    assert driver.written[-1] == SYSTEM_RESET
+    driver.written.clear()
+    protocol.digital_read(2)  # reporting was cleared, so it is re-requested
+    assert bytes(driver.written[:2]) == bytes([REPORT_DIGITAL, 1])
 
 
 @pytest.mark.unit

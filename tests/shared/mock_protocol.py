@@ -46,6 +46,9 @@ class MockProtocol:
     def disconnect(self) -> None:
         self.connected = False
 
+    def system_reset(self) -> None:
+        self.calls.append(("system_reset", ()))
+
     def pin_mode(self, pin: int, mode: PinMode) -> None:
         self.calls.append(("pin_mode", (pin, mode)))
         self.modes[pin] = mode
