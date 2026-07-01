@@ -214,6 +214,15 @@ def test_capabilities_fetch_from_firmware_once_and_cache(board: Board) -> None:
 
 
 @pytest.mark.unit
+def test_capabilities_fall_back_to_catalog_when_firmware_silent(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    protocol.fail_capabilities = True
+    caps = board.capabilities()  # query fails -> catalog, no exception
+    assert caps.supports(3, "PWM")  # UNO catalog
+
+
+@pytest.mark.unit
 def test_status_snapshots_every_pin(board: Board) -> None:
     protocol = board._protocol
     assert isinstance(protocol, MockProtocol)

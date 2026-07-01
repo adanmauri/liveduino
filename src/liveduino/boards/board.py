@@ -285,7 +285,11 @@ class Board(abc.ABC):
             return self._capabilities
         if self._protocol is None:
             return self._catalog_capabilities()
-        caps = self._fetch_capabilities()
+        try:
+            caps = self._fetch_capabilities()
+        except BoardConnectionError:
+            # Firmware did not answer the query: fall back to the catalog and retry later.
+            return self._catalog_capabilities()
         self._capabilities = caps
         self._caps_digital = caps.pinsSupporting("INPUT") | caps.pinsSupporting("OUTPUT")
         self._caps_pwm = caps.pinsSupporting("PWM")

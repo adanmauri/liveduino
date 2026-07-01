@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from liveduino.exceptions import BoardConnectionError
 from liveduino.types import BitOrder, DigitalValue, PinMode
 
 if TYPE_CHECKING:
@@ -34,6 +35,7 @@ class MockProtocol:
         self.serial_reply: bytes = b""
         self.firmware: tuple[int, int, str] = (2, 5, "StandardFirmata")
         self.capabilities: dict[int, list[int]] = {}
+        self.fail_capabilities = False
         self.analog_mapping: dict[int, int] = {}
         self.pin_states: dict[int, tuple[int, int]] = {}
         self.pulse: int = 0
@@ -129,6 +131,8 @@ class MockProtocol:
 
     def capability_query(self) -> dict[int, list[int]]:
         self.calls.append(("capability_query", ()))
+        if self.fail_capabilities:
+            raise BoardConnectionError("no capability response")
         return self.capabilities
 
     def analog_mapping_query(self) -> dict[int, int]:
