@@ -36,7 +36,7 @@ src/liveduino/
 │   ├── board.py    # Board base class (Arduino API + pin map, capabilities, connect)
 │   ├── registry.py # Board auto-discovery + lookup (get_board, available_boards)
 │   └── catalog/    # One Board subclass per board (e.g. ArduinoUno), auto-discovered
-├── protocols/      # Native FirmataProtocol; future LiveProtocol (Pinguino)
+├── protocols/      # Native FirmataProtocol (Arduino and Pinguino)
 ├── drivers/        # SerialDriver, TcpDriver, BluetoothDriver (SocketDriver base)
 ├── programmers/    # Bootloader flashers (Stk500v1Programmer, intel_hex, firmware resolver)
 ├── firmware/       # Bundled StandardFirmata hex images + manifest.json (built, shipped)

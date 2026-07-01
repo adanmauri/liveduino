@@ -44,6 +44,16 @@ def test_arduino_uno_is_auto_discovered() -> None:
     assert boards["arduino:uno"] is ArduinoUno
 
 
+@pytest.mark.unit
+def test_pinguino_4550_registered() -> None:
+    board = get_board("pinguino:4550")
+    assert board.id == "pinguino:4550"
+    assert board.firmware_sketch == "PinguinoFirmata"
+    assert board.fqbn is None  # not built by arduino-cli
+    assert board.supports_pwm(11)
+    assert board.is_valid_analog_pin(12)
+
+
 # board_id, analog channels, supports PWM on pin 3, supports PWM on pin 10
 _ATMEGA328_BOARDS = [
     ("arduino:nano", 8, True),

@@ -15,6 +15,7 @@ from liveduino.boards.catalog.arduino_pro_mini import ArduinoProMini
 from liveduino.boards.catalog.arduino_uno import ArduinoUno
 from liveduino.boards.catalog.arduino_uno_mini import ArduinoUnoMini
 from liveduino.boards.catalog.lilypad_arduino import LilyPadArduino
+from liveduino.boards.catalog.pinguino_4550 import Pinguino4550
 from liveduino.connection import connect
 from liveduino.constants import (
     A0,
@@ -94,6 +95,7 @@ __all__ = [
     "BoardStatus",
     "Capabilities",
     "LilyPadArduino",
+    "Pinguino4550",
     "DigitalValue",
     "HIGH",
     "INPUT",
