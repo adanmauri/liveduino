@@ -179,9 +179,10 @@ Modes are Arduino-style names (`'INPUT'`, `'OUTPUT'`, `'PWM'`, `'SERVO'`, `'ANAL
 `'I2C'`, `'PULLUP'`, ...), never raw protocol bytes.
 
 **`capabilities()` reads the board's real capabilities from the firmware the first time it
-can, then caches them** (they are never re-requested). Before the board is reachable it
-falls back to the class/catalog definition as a bypass. Once cached, pin validation
-(digital / analog / PWM) follows the board's own answer:
+can, then caches them** (they are never re-requested). Until the board can be queried — not
+connected yet, or the firmware doesn't answer — it falls back to the class/catalog
+definition as a bypass. Once cached, pin validation (digital / analog / PWM) follows the
+board's own answer:
 
 ```python
 caps = board.capabilities()      # firmware if reachable (cached), else the catalog
