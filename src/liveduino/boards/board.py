@@ -39,6 +39,7 @@ from liveduino.exceptions import (
 from liveduino.i2c import Wire
 from liveduino.protocols.base import ProtocolClient
 from liveduino.protocols.firmata import FirmataProtocol
+from liveduino.serial_relay import SerialRelay
 from liveduino.types import AnalogPin, BitOrder, DigitalValue, PinArg, PinMode
 
 
@@ -103,6 +104,7 @@ class Board(abc.ABC):
         self._protocol: ProtocolClient | None = None
         self._origin_s = time.monotonic()
         self._wire: Wire | None = None
+        self._serials: dict[int, SerialRelay] = {}
         # Capabilities queried from the board, which override the class-level pin
         # definitions once queryCapabilities() is called (None = use the catalog).
         self._capabilities: Capabilities | None = None
@@ -231,6 +233,32 @@ class Board(abc.ABC):
     ) -> bytes:
         """Read count bytes from an I2C device, optionally starting at a register."""
         return self._client.i2c_read(address, count, register, restart=restart)
+
+    def i2cReadContinuous(self, address: int, count: int, register: int | None = None) -> None:
+        """Ask an I2C device to keep reporting count bytes until stopped."""
+        self._client.i2c_read_continuous(address, count, register)
+
+    def i2cValue(self, address: int, register: int | None = None) -> bytes | None:
+        """Return the latest continuously-reported reply from an I2C device, or None."""
+        return self._client.i2c_value(address, register)
+
+    def i2cStopReading(self, address: int) -> None:
+        """Stop a continuous read previously started for an I2C device."""
+        self._client.i2c_stop_reading(address)
+
+    def samplingInterval(self, milliseconds: int) -> None:
+        """Set how often the board auto-reports analog inputs and continuous I2C reads."""
+        self._client.sampling_interval(milliseconds)
+
+    def readString(self) -> str | None:
+        """Return the latest text message the board has sent (e.g. an error), or None."""
+        return self._client.read_string()
+
+    def serial(self, port: int) -> SerialRelay:
+        """Return the board's serial-relay port ``port`` (Arduino ``Serial1``/``Serial2``/...)."""
+        if port not in self._serials:
+            self._serials[port] = SerialRelay(self._client, port)
+        return self._serials[port]
 
     @property
     def wire(self) -> Wire:

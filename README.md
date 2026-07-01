@@ -257,6 +257,7 @@ timing (`delay`, `millis`, ...). Device functions that StandardFirmata cannot pe
 | **Servo** | `servoWrite`, `servoConfig` | ✅ built in (Servo lib) |
 | **I2C** | `i2cConfig`, `i2cWrite`, `i2cRead` | ✅ built in (Wire lib) |
 | **Discovery** | `info`, `capabilities`, `pinState`, `status` | ✅ built in (Firmata queries) |
+| **Streaming & serial** | `samplingInterval`, `i2cReadContinuous`/`i2cValue`, `readString`, `serial` | ✅ built in |
 | Host-side timing | `delay`, `delayMicroseconds`, `millis`, `micros` | ✅ host only |
 | Tone / pulse / shift | `tone`, `noTone`, `pulseIn`, `shiftOut`, `shiftIn` | ⚠️ raise `UnsupportedOperationError` |
 

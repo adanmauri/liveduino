@@ -14,6 +14,12 @@ Public board methods use **camelCase** to match Arduino/Wiring exactly.
 | `i2cConfig(delay=0)` | Yes | Enable the I2C bus (optional read delay in µs) |
 | `i2cWrite(address, data)` | Yes | Write bytes to a 7-bit I2C address |
 | `i2cRead(address, count, register=None, *, restart=False)` | Yes | Read `count` bytes, optionally from a register |
+| `i2cReadContinuous(address, count, register=None)` | Yes | Keep reporting a register until stopped |
+| `i2cValue(address, register=None)` | Yes | Latest continuously-reported reply (or `None`) |
+| `i2cStopReading(address)` | Yes | Stop a continuous read |
+| `samplingInterval(ms)` | Yes | How often the board auto-reports analog / continuous I2C |
+| `readString()` | Yes | Latest text message from the board (e.g. an error), or `None` |
+| `serial(port)` | Yes | A serial-relay port (Arduino `Serial1`/`Serial2`/...) |
 | `info()` | Yes | Firmware name/version + board identity (`BoardInfo`) |
 | `capabilities()` | Once | Per-pin supported modes; reads the firmware once and caches, else catalog (`Capabilities`) |
 | `pinState(pin)` | Yes | A pin's current mode and value (`PinState`) |
@@ -184,6 +190,41 @@ class Capabilities:
 
 `BoardInfo`, `PinState`, `Capabilities`, and `BoardStatus` are importable from `liveduino`.
 Each query is one round-trip; `status()` queries every pin.
+
+## Streaming and serial
+
+**Continuous I2C.** Instead of a request per read, ask the board to keep reporting a register
+and poll the latest value. The report rate follows `samplingInterval`:
+
+```python
+board.samplingInterval(20)                     # report every 20 ms
+board.i2cReadContinuous(0x68, 6, register=0x3B)
+data = board.i2cValue(0x68, register=0x3B)     # latest block, or None yet
+board.i2cStopReading(0x68)
+```
+
+**Board messages.** StandardFirmata sends text (e.g. `"I2C: Too many bytes received"`) as
+string messages; `readString()` returns the latest, or `None`:
+
+```python
+message = board.readString()
+```
+
+**Serial relay.** Bridge a UART device wired to one of the board's extra serial ports
+(hardware `Serial1`/`Serial2`/`Serial3`, or software serial with rx/tx pins). The port
+object mirrors Arduino's `HardwareSerial`:
+
+```python
+gps = board.serial(1)          # Arduino Serial1
+gps.begin(9600)
+gps.write(b"$PMTK605*31\r\n")
+while gps.available():
+    byte = gps.read()          # next byte, or -1 when empty
+gps.end()
+```
+
+Serial relay needs a board with spare UARTs (e.g. a Mega) or a software-serial capable pin
+pair; a plain UNO only has the USB serial.
 
 See also: [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) for how the API maps onto the protocol
 and driver layers.

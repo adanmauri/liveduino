@@ -29,6 +29,9 @@ class MockProtocol:
         self.pwm: dict[int, int] = {}
         self.servo: dict[int, int] = {}
         self.i2c_reply: bytes = b""
+        self.i2c_latest: bytes | None = None
+        self.string: str | None = None
+        self.serial_reply: bytes = b""
         self.firmware: tuple[int, int, str] = (2, 5, "StandardFirmata")
         self.capabilities: dict[int, list[int]] = {}
         self.analog_mapping: dict[int, int] = {}
@@ -81,6 +84,41 @@ class MockProtocol:
     ) -> bytes:
         self.calls.append(("i2c_read", (address, count, register, restart)))
         return self.i2c_reply
+
+    def i2c_read_continuous(
+        self, address: int, count: int, register: int | None = None
+    ) -> None:
+        self.calls.append(("i2c_read_continuous", (address, count, register)))
+
+    def i2c_value(self, address: int, register: int | None = None) -> bytes | None:
+        self.calls.append(("i2c_value", (address, register)))
+        return self.i2c_latest
+
+    def i2c_stop_reading(self, address: int) -> None:
+        self.calls.append(("i2c_stop_reading", (address,)))
+
+    def sampling_interval(self, milliseconds: int) -> None:
+        self.calls.append(("sampling_interval", (milliseconds,)))
+
+    def read_string(self) -> str | None:
+        self.calls.append(("read_string", ()))
+        return self.string
+
+    def serial_config(
+        self, port: int, baud: int, rx: int | None = None, tx: int | None = None
+    ) -> None:
+        self.calls.append(("serial_config", (port, baud, rx, tx)))
+
+    def serial_write(self, port: int, data: Iterable[int]) -> None:
+        self.calls.append(("serial_write", (port, tuple(data))))
+
+    def serial_value(self, port: int) -> bytes:
+        self.calls.append(("serial_value", (port,)))
+        reply, self.serial_reply = self.serial_reply, b""
+        return reply
+
+    def serial_close(self, port: int) -> None:
+        self.calls.append(("serial_close", (port,)))
 
     def report_firmware(self) -> tuple[int, int, str]:
         self.calls.append(("report_firmware", ()))
