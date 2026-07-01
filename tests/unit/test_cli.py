@@ -34,6 +34,15 @@ def test_boards_lists_catalog(capsys: pytest.CaptureFixture[str]) -> None:
     output = capsys.readouterr().out
     assert "arduino:uno" in output
     assert "Arduino UNO" in output
+    assert "pinguino:4550" in output  # all vendors by default
+
+
+@pytest.mark.unit
+def test_boards_filters_by_vendor(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["boards", "--vendor", "pinguino"]) == 0
+    output = capsys.readouterr().out
+    assert "pinguino:4550" in output
+    assert "arduino:uno" not in output
 
 
 @pytest.mark.unit

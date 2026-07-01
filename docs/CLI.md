@@ -54,13 +54,16 @@ of your own.
 ## List boards and firmwares
 
 ```bash
-liveduino-cli boards                            # list the boards in the catalog
+liveduino-cli boards                            # list every board in the catalog
+liveduino-cli boards --vendor arduino           # only Arduino boards
+liveduino-cli boards --vendor pinguino          # only Pinguino boards
 liveduino-cli boards arduino:ethernet firmwares # list a board's bundled firmwares
 ```
 
 `boards` prints every board id with its display name (the same ids used by
-`connect("arduino:uno", port)`). Passing a board id lists the firmwares bundled for
-it, marking the default; use those names as the `firmware` argument to `flash`.
+`connect("arduino:uno", port)`). `--vendor` filters by the id prefix
+(`arduino` / `pinguino`). Passing a board id lists the firmwares bundled for it,
+marking the default; use those names as the `firmware` argument to `flash`.
 
 ## List serial ports
 
