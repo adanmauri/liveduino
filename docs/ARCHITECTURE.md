@@ -114,7 +114,15 @@ public API.
 
 ## Future: Pinguino
 
-Pinguino boards will use **LiveProtocol**: a text command interpreter evolved from the original [Frameduino](https://github.com/adanmauri/frameduino) `pinguino/usb_interpreter.pde`, with explicit framing and a `LIVE V1` handshake. The same `Board` API will apply; a Pinguino board subclass just overrides `protocol_factory` to build the new protocol client.
+Pinguino support is **planned**. The original idea was **LiveProtocol**: a text command
+interpreter evolved from the original [Frameduino](https://github.com/adanmauri/frameduino)
+`pinguino/usb_interpreter.pde`, with explicit framing and a `LIVE V1` handshake. The same
+`Board` API applies; a Pinguino board subclass just picks its protocol client.
+
+> **Work in progress lives in the [`experimental`](https://github.com/adanmauri/liveduino/tree/experimental)
+> branch**, exploring a Firmata-based approach instead: a `PinguinoFirmata` firmware for
+> 8-bit PIC18F boards that speaks the same wire protocol as StandardFirmata, so the existing
+> `FirmataProtocol` drives a Pinguino with no new protocol client. Not merged to `main` yet.
 
 ## Testing
 
