@@ -22,7 +22,8 @@ Items not implemented yet. Add entries when scope is agreed; link to issues when
 - [ ] Arduino Mega / Mega ADK (16 analog channels)
 - [ ] Arduino Leonardo, Micro (ATmega32U4)
 - [ ] Arduino Due (SAM3X8E, 32-bit ARM Cortex-M3)
-- [ ] Pinguino
+- [~] Pinguino 4550 (PIC18F, 8-bit): `Pinguino4550` board + `PinguinoFirmata` firmware done;
+      firmware untested on hardware, and PIC32 (Pinguino 32) not started
 
 ## Drivers
 

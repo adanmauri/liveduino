@@ -6,7 +6,7 @@ Liveduino is a layered Python library that exposes the Arduino/Wiring API while 
 
 ```
 User API (Board subclass: ArduinoUno.pinMode, digitalWrite, …)
-    → ProtocolClient (FirmataProtocol, future LiveProtocol)
+    → ProtocolClient (FirmataProtocol — Arduino and Pinguino alike)
     → Driver (SerialDriver, TcpDriver, BluetoothDriver, …)
     → Microcontroller firmware
 ```
@@ -38,7 +38,7 @@ driver.
 | `src/liveduino/boards/board.py` | `Board` abstract base class (Arduino API incl. host timing, pin map, capabilities, `connect`) |
 | `src/liveduino/boards/catalog/` | One `Board` subclass per board (e.g. `ArduinoUno`), auto-discovered |
 | `src/liveduino/boards/registry.py` | Auto-discovery + lookup (`get_board`, `available_boards`) |
-| `src/liveduino/protocols/` | Protocol clients (native `FirmataProtocol` today; `LiveProtocol` for Pinguino later) |
+| `src/liveduino/protocols/` | Protocol clients (native `FirmataProtocol`, used for both Arduino and Pinguino) |
 | `src/liveduino/drivers/` | Byte channels: `SerialDriver`, `TcpDriver`, `BluetoothDriver` (shared `SocketDriver` base) |
 | `src/liveduino/connection.py` | Factory `connect("arduino:uno", port)` |
 | `firmware/` | Setup docs and future MCU firmware (Pinguino live interpreter) |
@@ -112,9 +112,22 @@ public API.
 
 `TcpDriver` and `BluetoothDriver` share a `SocketDriver` base that buffers non-blocking socket reads so the synchronous Firmata pump works the same as over serial.
 
-## Future: Pinguino
+## Pinguino (8-bit, PIC18F)
 
-Pinguino boards will use **LiveProtocol**: a text command interpreter evolved from the original [Frameduino](https://github.com/adanmauri/frameduino) `pinguino/usb_interpreter.pde`, with explicit framing and a `LIVE V1` handshake. The same `Board` API will apply; a Pinguino board subclass just overrides `protocol_factory` to build the new protocol client.
+Pinguino boards run **PinguinoFirmata** (`firmware/pinguino/firmata/`), a firmware that
+implements the same Firmata wire protocol as StandardFirmata but on top of the Pinguino API.
+Because Firmata is a protocol (bytes over serial), not an Arduino-only library, liveduino
+drives a Pinguino with the **same `FirmataProtocol`** it uses for an Arduino — no new
+protocol client. A Pinguino board subclass (e.g. `Pinguino4550`) just declares its pin map;
+the firmware's capability query refines that at runtime.
+
+Flashing differs: Pinguino uses its own bootloader/IDE, so `fqbn` is `None` (no bundled hex)
+and liveduino's STK500v1 flasher does not apply — you flash `PinguinoFirmata` with Pinguino's
+tools, then liveduino talks to it.
+
+> The original [Frameduino](https://github.com/adanmauri/frameduino) plan was a custom
+> text interpreter (`pinguino/usb_interpreter.pde`, a `LiveProtocol`). The Firmata approach
+> supersedes it: it reuses the existing client instead of inventing a protocol.
 
 ## Testing
 

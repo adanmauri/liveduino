@@ -21,7 +21,7 @@
 | MKR1000 | Planned | Firmata | StandardFirmataWiFi |
 | MKR WiFi 1010 | Planned | Firmata | StandardFirmataWiFi |
 | Nano 33 IoT | Planned | Firmata | StandardFirmataWiFi |
-| Pinguino | Planned | LiveProtocol | Live interpreter (Frameduino-style) |
+| Pinguino 4550 (PIC18F) | Experimental | Firmata | PinguinoFirmata (firmware untested on hardware) |
 
 All ids use the `arduino:<model>` form (e.g. `arduino:nano`, `arduino:pro`,
 `arduino:diecimila`). Each board profile only declares its pin map and
