@@ -41,7 +41,7 @@ liveduino-cli flash arduino:uno --port /dev/ttyACM0 --hex custom.hex
 | `--no-verify` | off | Skip the read-back verification pass |
 
 The board id selects the bundled firmware image and the bootloader settings (baud
-rate and flash page size). The MVP targets the ATmega328 family (UNO, Nano, Mini,
+rate and flash page size). Flashing targets the ATmega328 family (UNO, Nano, Mini,
 Pro Mini, ...); other bootloaders (Caterina on the Leonardo/Micro, SAM-BA on the
 MKR family) are not implemented yet.
 

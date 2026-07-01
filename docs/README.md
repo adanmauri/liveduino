@@ -7,7 +7,7 @@ quick start, and overview; the pages here go deeper on each topic.
 
 | Document | Contents |
 | --- | --- |
-| [`API.md`](API.md) | Full Arduino method table, analog pin model, and the `map_range` / `constrain` helpers |
+| [`API.md`](API.md) | Full Arduino method table, analog pins, servo, I2C (+ `Wire`), discovery, serial relay, and helpers |
 | [`BOARDS.md`](BOARDS.md) | Supported boards and how to add one |
 | [`CONNECTIONS.md`](CONNECTIONS.md) | Drivers (serial, TCP, Bluetooth) and the protocol override |
 | [`CLI.md`](CLI.md) | The `liveduino-cli` command: flash firmware, list boards and ports |

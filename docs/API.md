@@ -47,6 +47,20 @@ from liveduino import A0
 val = board.analogRead(A0)  # same as analogRead(0); returns 0-1023
 ```
 
+## Servo
+
+StandardFirmata bundles the Arduino `Servo` library, so servos work with no extra setup.
+`servoWrite(pin, angle)` attaches the servo and moves it (0-180°); `servoConfig` customises
+the pulse-width range (µs) first if your servo needs it:
+
+```python
+board.servoWrite(9, 90)           # center a servo on pin 9
+board.servoConfig(9, 600, 2400)   # optional: min/max pulse before writing
+board.servoWrite(9, 180)
+```
+
+Servo works on any digital pin (including `A0`-`A5`), not only PWM pins.
+
 ## I2C
 
 StandardFirmata bundles the Arduino `Wire` library, so liveduino can act as an I2C master
@@ -226,6 +240,16 @@ gps.end()
 
 Serial relay needs a board with spare UARTs (e.g. a Mega) or a software-serial capable pin
 pair; a plain UNO only has the USB serial.
+
+## Reset and unsupported functions
+
+`board.reset()` returns the board to its power-on Firmata state (all pins to default,
+reporting cleared) via SYSTEM_RESET.
+
+`tone`, `noTone`, `pulseIn`, `shiftOut`, and `shiftIn` exist on `Board` for API fidelity but
+raise `UnsupportedOperationError`: the Firmata protocol does not define them (they are in
+neither StandardFirmata nor StandardFirmataPlus), so they would need custom firmware. See
+[`docs/ARCHITECTURE.md`](ARCHITECTURE.md#not-supported-tone--pulsein--shift).
 
 See also: [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) for how the API maps onto the protocol
 and driver layers.

@@ -2,7 +2,7 @@
 
 | Board | Status | Protocol | Firmware |
 | --- | --- | --- | --- |
-| Arduino UNO | MVP | Firmata | StandardFirmata |
+| Arduino UNO | Supported | Firmata | StandardFirmata |
 | Nano | Supported | Firmata | StandardFirmata |
 | Mini | Supported | Firmata | StandardFirmata |
 | Pro Mini | Supported | Firmata | StandardFirmata |
