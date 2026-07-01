@@ -46,6 +46,7 @@ CAPABILITY_QUERY = 0x6B
 CAPABILITY_RESPONSE = 0x6C
 PIN_STATE_QUERY = 0x6D
 PIN_STATE_RESPONSE = 0x6E
+EXTENDED_ANALOG = 0x6F
 SERVO_CONFIG = 0x70
 I2C_REQUEST = 0x76
 I2C_REPLY = 0x77
@@ -56,6 +57,10 @@ REPORT_FIRMWARE = 0x79
 # in an analog-mapping response.
 _CAPABILITY_END = 0x7F
 _NO_ANALOG_CHANNEL = 0x7F
+
+# Highest pin addressable by the short analog message (its channel is 4-bit);
+# higher pins use the EXTENDED_ANALOG sysex instead.
+_MAX_ANALOG_CHANNEL = 0x0F
 
 # Servo pulse-width range, in microseconds (a 14-bit value over two 7-bit bytes).
 _MAX_PULSE_WIDTH = 0x3FFF
@@ -319,7 +324,15 @@ class FirmataProtocol:
         if not 0 <= value <= 255:
             raise InvalidValueError(f"PWM value must be 0-255, got {value}")
         self._send(bytes([SET_PIN_MODE, pin, _PIN_MODE_PWM]))
-        self._send(bytes([ANALOG_MESSAGE | (pin & 0x0F), value & 0x7F, (value >> 7) & 0x7F]))
+        self._send(self._analog_message(pin, value))
+
+    @staticmethod
+    def _analog_message(pin: int, value: int) -> bytes:
+        """Encode an analog write: the short message for pins 0-15, else EXTENDED_ANALOG."""
+        lsb, msb = value & 0x7F, (value >> 7) & 0x7F
+        if pin <= _MAX_ANALOG_CHANNEL:
+            return bytes([ANALOG_MESSAGE | pin, lsb, msb])
+        return bytes([START_SYSEX, EXTENDED_ANALOG, pin, lsb, msb, END_SYSEX])
 
     def servo_config(self, pin: int, min_pulse: int, max_pulse: int) -> None:
         """Attach a servo on a pin and set its min/max pulse widths (microseconds)."""
@@ -350,7 +363,7 @@ class FirmataProtocol:
                 f"Servo angle must be 0-{_MAX_SERVO_ANGLE}, got {angle}"
             )
         self._send(bytes([SET_PIN_MODE, pin, _PIN_MODE_SERVO]))
-        self._send(bytes([ANALOG_MESSAGE | (pin & 0x0F), angle & 0x7F, (angle >> 7) & 0x7F]))
+        self._send(self._analog_message(pin, angle))
 
     def i2c_config(self, delay: int = 0) -> None:
         """Enable the I2C bus, setting the read delay (microseconds) between write and read."""
