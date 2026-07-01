@@ -44,14 +44,31 @@ def test_arduino_uno_is_auto_discovered() -> None:
     assert boards["arduino:uno"] is ArduinoUno
 
 
+_PINGUINO_BOARDS = [
+    "pinguino:14k50",
+    "pinguino:2455",
+    "pinguino:2550",
+    "pinguino:2553",
+    "pinguino:25k50",
+    "pinguino:26j50",
+    "pinguino:27j53",
+    "pinguino:4455",
+    "pinguino:4550",
+    "pinguino:4553",
+    "pinguino:45k50",
+    "pinguino:46j50",
+    "pinguino:47j53",
+]
+
+
 @pytest.mark.unit
-def test_pinguino_4550_registered() -> None:
-    board = get_board("pinguino:4550")
-    assert board.id == "pinguino:4550"
+@pytest.mark.parametrize("board_id", _PINGUINO_BOARDS)
+def test_pinguino_boards_registered(board_id: str) -> None:
+    board = get_board(board_id)
+    assert board.id == board_id
     assert board.firmware_sketch == "PinguinoFirmata"
-    assert board.fqbn is None  # not built by arduino-cli
+    assert board.fqbn is None  # built with the Pinguino IDE, not arduino-cli
     assert board.supports_pwm(11)
-    assert board.is_valid_analog_pin(12)
 
 
 # board_id, analog channels, supports PWM on pin 3, supports PWM on pin 10

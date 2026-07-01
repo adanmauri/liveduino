@@ -15,7 +15,19 @@ from liveduino.boards.catalog.arduino_pro_mini import ArduinoProMini
 from liveduino.boards.catalog.arduino_uno import ArduinoUno
 from liveduino.boards.catalog.arduino_uno_mini import ArduinoUnoMini
 from liveduino.boards.catalog.lilypad_arduino import LilyPadArduino
+from liveduino.boards.catalog.pinguino_14k50 import Pinguino14K50
+from liveduino.boards.catalog.pinguino_25k50 import Pinguino25K50
+from liveduino.boards.catalog.pinguino_26j50 import Pinguino26J50
+from liveduino.boards.catalog.pinguino_27j53 import Pinguino27J53
+from liveduino.boards.catalog.pinguino_45k50 import Pinguino45K50
+from liveduino.boards.catalog.pinguino_46j50 import Pinguino46J50
+from liveduino.boards.catalog.pinguino_47j53 import Pinguino47J53
+from liveduino.boards.catalog.pinguino_2455 import Pinguino2455
+from liveduino.boards.catalog.pinguino_2550 import Pinguino2550
+from liveduino.boards.catalog.pinguino_2553 import Pinguino2553
+from liveduino.boards.catalog.pinguino_4455 import Pinguino4455
 from liveduino.boards.catalog.pinguino_4550 import Pinguino4550
+from liveduino.boards.catalog.pinguino_4553 import Pinguino4553
 from liveduino.connection import connect
 from liveduino.constants import (
     A0,
@@ -95,7 +107,19 @@ __all__ = [
     "BoardStatus",
     "Capabilities",
     "LilyPadArduino",
+    "Pinguino14K50",
+    "Pinguino2455",
+    "Pinguino25K50",
+    "Pinguino2550",
+    "Pinguino2553",
+    "Pinguino26J50",
+    "Pinguino27J53",
+    "Pinguino4455",
+    "Pinguino45K50",
     "Pinguino4550",
+    "Pinguino4553",
+    "Pinguino46J50",
+    "Pinguino47J53",
     "DigitalValue",
     "HIGH",
     "INPUT",
