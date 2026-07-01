@@ -23,6 +23,7 @@ from liveduino.protocols.firmata import (
     CAPABILITY_RESPONSE,
     DIGITAL_MESSAGE,
     END_SYSEX,
+    EXTENDED_ANALOG,
     I2C_CONFIG,
     I2C_REPLY,
     I2C_REQUEST,
@@ -149,6 +150,18 @@ def test_analog_write_invalid_value_raises() -> None:
 
 
 @pytest.mark.unit
+def test_analog_write_uses_extended_analog_for_high_pins() -> None:
+    protocol, driver = _connected()
+    protocol.analog_write(16, 200)
+    assert bytes(driver.written) == bytes(
+        [
+            SET_PIN_MODE, 16, 0x03,
+            START_SYSEX, EXTENDED_ANALOG, 16, 200 & 0x7F, (200 >> 7) & 0x7F, END_SYSEX,
+        ]
+    )
+
+
+@pytest.mark.unit
 def test_servo_write_sets_mode_and_angle() -> None:
     protocol, driver = _connected()
     protocol.servo_write(9, 90)
@@ -162,6 +175,18 @@ def test_servo_write_invalid_angle_raises() -> None:
     protocol, _ = _connected()
     with pytest.raises(InvalidValueError):
         protocol.servo_write(9, 181)
+
+
+@pytest.mark.unit
+def test_servo_write_uses_extended_analog_for_high_pins() -> None:
+    protocol, driver = _connected()
+    protocol.servo_write(16, 90)
+    assert bytes(driver.written) == bytes(
+        [
+            SET_PIN_MODE, 16, 0x04,
+            START_SYSEX, EXTENDED_ANALOG, 16, 90 & 0x7F, (90 >> 7) & 0x7F, END_SYSEX,
+        ]
+    )
 
 
 @pytest.mark.unit
