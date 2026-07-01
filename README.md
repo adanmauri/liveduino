@@ -343,22 +343,13 @@ Full board table and how to add a board: [`docs/BOARDS.md`](docs/BOARDS.md).
 
 ## Connections
 
-**One API, every wire.** Liveduino implements StandardFirmata natively over a pluggable
-**driver** (the channel), so the same board, the same code, and the same Arduino calls run
-over whatever connection you have. Start over USB on your desk, move to Wi-Fi across the
-room, or go wireless over Bluetooth: you swap one line, never your code.
-
-| Connection | When to reach for it | How |
-| --- | --- | --- |
-| **USB / serial** | Plug-and-play on your desk, the default | `.connect("/dev/ttyACM0")` |
-| **Wi-Fi / Ethernet (TCP)** | Drive a board anywhere on the network | `.connect(driver=TcpDriver(host, port))` |
-| **Bluetooth (RFCOMM)** | Cut the cord and go wireless | `.connect(driver=BluetoothDriver(...))` |
+**One API, every wire.** The board talks over a pluggable **driver**, so the same code runs
+over USB, Wi-Fi/Ethernet, or Bluetooth — you swap one line, never your code:
 
 ```python
-from liveduino import ArduinoUno, TcpDriver
-
 board = ArduinoUno().connect("/dev/ttyACM0")                          # USB serial (default)
 board = ArduinoUno().connect(driver=TcpDriver("192.168.1.50", 3030))  # Wi-Fi / Ethernet
+board = ArduinoUno().connect(driver=BluetoothDriver("AA:BB:CC:DD:EE:FF"))  # Bluetooth RFCOMM
 ```
 
 Every driver and the protocol override: [`docs/CONNECTIONS.md`](docs/CONNECTIONS.md).
