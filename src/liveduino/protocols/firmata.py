@@ -40,6 +40,7 @@ START_SYSEX = 0xF0
 END_SYSEX = 0xF7
 
 # Firmata sysex sub-commands
+SERIAL_MESSAGE = 0x60
 ANALOG_MAPPING_QUERY = 0x69
 ANALOG_MAPPING_RESPONSE = 0x6A
 CAPABILITY_QUERY = 0x6B
@@ -48,10 +49,12 @@ PIN_STATE_QUERY = 0x6D
 PIN_STATE_RESPONSE = 0x6E
 EXTENDED_ANALOG = 0x6F
 SERVO_CONFIG = 0x70
+STRING_DATA = 0x71
 I2C_REQUEST = 0x76
 I2C_REPLY = 0x77
 I2C_CONFIG = 0x78
 REPORT_FIRMWARE = 0x79
+SAMPLING_INTERVAL = 0x7A
 
 # Per-pin terminator in a capability response, and the "no analog channel" marker
 # in an analog-mapping response.
@@ -70,8 +73,24 @@ _MAX_SERVO_ANGLE = 180
 # I2C read/write modes, carried in bits 3-4 of the request's mode byte.
 _I2C_WRITE = 0x00
 _I2C_READ = 0x08
+_I2C_READ_CONTINUOUSLY = 0x10
+_I2C_STOP_READING = 0x18
 # Bit 6 of the mode byte requests a restart (1) instead of a stop (0) after the write.
 _I2C_RESTART_TX = 0x40
+
+# Sampling interval, in milliseconds (a 14-bit value; the firmware floors it at 1).
+_MIN_SAMPLING_INTERVAL = 1
+_MAX_SAMPLING_INTERVAL = 0x3FFF
+
+# Serial relay: the message byte packs an action (high nibble) with a port (low nibble).
+_SERIAL_CONFIG = 0x10
+_SERIAL_WRITE = 0x20
+_SERIAL_READ = 0x30
+_SERIAL_REPLY = 0x40
+_SERIAL_CLOSE = 0x50
+_SERIAL_READ_CONTINUOUS = 0x00
+_SERIAL_STOP_READING = 0x01
+_SERIAL_PORT_MASK = 0x0F
 # A 7-bit I2C address and an 8-bit data/register byte.
 _I2C_ADDRESS_MAX = 0x7F
 _I2C_BYTE_MAX = 0xFF
@@ -110,6 +129,8 @@ class _FirmataParser:
         self.capabilities: dict[int, list[int]] | None = None
         self.analog_mapping: dict[int, int] | None = None
         self.pin_states: dict[int, tuple[int, int]] = {}
+        self.string: str | None = None
+        self.serial_data: dict[int, list[int]] = {}
         self._command = 0
         self._channel = 0
         self._expected = 0
@@ -126,11 +147,27 @@ class _FirmataParser:
         self.capabilities = None
         self.analog_mapping = None
         self.pin_states.clear()
+        self.string = None
+        self.serial_data.clear()
 
     def take_i2c_reply(self, address: int, register: int) -> bytes | None:
         """Pop and return the latest I2C reply for an address/register, if any."""
         data = self.i2c_replies.pop((address, register), None)
         return None if data is None else bytes(data)
+
+    def peek_i2c_reply(self, address: int, register: int) -> bytes | None:
+        """Return the latest I2C reply for an address/register without consuming it."""
+        data = self.i2c_replies.get((address, register))
+        return None if data is None else bytes(data)
+
+    def take_string(self) -> str | None:
+        """Pop the latest string message from the board, if any."""
+        message, self.string = self.string, None
+        return message
+
+    def drain_serial(self, port: int) -> bytes:
+        """Return and clear the bytes buffered from a serial-relay port."""
+        return bytes(self.serial_data.pop(port, []))
 
     def take_firmware(self) -> tuple[int, int, str] | None:
         """Pop the reported firmware (major, minor, name), if received."""
@@ -251,12 +288,25 @@ class _FirmataParser:
                 value |= byte << (7 * shift)
             self.pin_states[payload[0]] = (payload[1], value)
 
+    def _store_string(self, payload: list[int]) -> None:
+        self.string = "".join(
+            chr(payload[i] | (payload[i + 1] << 7)) for i in range(0, len(payload) - 1, 2)
+        )
+
+    def _store_serial_reply(self, payload: list[int]) -> None:
+        # payload[0] packs the reply action with the port; the rest are byte pairs.
+        port = payload[0] & _SERIAL_PORT_MASK
+        data = [payload[i] | (payload[i + 1] << 7) for i in range(1, len(payload) - 1, 2)]
+        self.serial_data.setdefault(port, []).extend(data)
+
     _SYSEX_HANDLERS = {
         I2C_REPLY: _store_i2c_reply,
         REPORT_FIRMWARE: _store_firmware,
         CAPABILITY_RESPONSE: _store_capabilities,
         ANALOG_MAPPING_RESPONSE: _store_analog_mapping,
         PIN_STATE_RESPONSE: _store_pin_state,
+        STRING_DATA: _store_string,
+        SERIAL_MESSAGE: _store_serial_reply,
     }
 
 
@@ -385,11 +435,32 @@ class FirmataProtocol:
     def i2c_read(
         self, address: int, count: int, register: int | None = None, *, restart: bool = False
     ) -> bytes:
-        """Read ``count`` bytes from an I2C device, optionally from a register."""
+        """Read ``count`` bytes from an I2C device once, optionally from a register."""
+        mode = _I2C_READ | (_I2C_RESTART_TX if restart else 0)
+        self._send_i2c_read(address, mode, count, register)
+        reply_register = register if register is not None else 0
+        return self._await_reply(
+            lambda: self._parser.take_i2c_reply(address, reply_register), "I2C reply"
+        )
+
+    def i2c_read_continuous(self, address: int, count: int, register: int | None = None) -> None:
+        """Ask the device to keep reporting ``count`` bytes until stopped."""
+        self._send_i2c_read(address, _I2C_READ_CONTINUOUSLY, count, register)
+
+    def i2c_value(self, address: int, register: int | None = None) -> bytes | None:
+        """Return the latest continuously-reported reply for a device, or None."""
+        self._pump()
+        return self._parser.peek_i2c_reply(address, register if register is not None else 0)
+
+    def i2c_stop_reading(self, address: int) -> None:
+        """Stop a continuous read previously started for a device."""
+        self._check_i2c_address(address)
+        self._send(bytes([START_SYSEX, I2C_REQUEST, address, _I2C_STOP_READING, END_SYSEX]))
+
+    def _send_i2c_read(self, address: int, mode: int, count: int, register: int | None) -> None:
         self._check_i2c_address(address)
         if count < 0:
             raise InvalidValueError(f"I2C read count must be non-negative, got {count}")
-        mode = _I2C_READ | (_I2C_RESTART_TX if restart else 0)
         message = [START_SYSEX, I2C_REQUEST, address, mode]
         if register is not None:
             if not 0 <= register <= _I2C_BYTE_MAX:
@@ -397,15 +468,85 @@ class FirmataProtocol:
             message += [register & 0x7F, (register >> 7) & 0x7F]
         message += [count & 0x7F, (count >> 7) & 0x7F, END_SYSEX]
         self._send(bytes(message))
-        reply_register = register if register is not None else 0
-        return self._await_reply(
-            lambda: self._parser.take_i2c_reply(address, reply_register), "I2C reply"
-        )
 
     @staticmethod
     def _check_i2c_address(address: int) -> None:
         if not 0 <= address <= _I2C_ADDRESS_MAX:
             raise InvalidValueError(f"I2C address must be 0-{_I2C_ADDRESS_MAX}, got {address}")
+
+    def sampling_interval(self, milliseconds: int) -> None:
+        """Set how often the board auto-reports analog inputs and continuous I2C reads."""
+        if not _MIN_SAMPLING_INTERVAL <= milliseconds <= _MAX_SAMPLING_INTERVAL:
+            raise InvalidValueError(
+                f"Sampling interval must be {_MIN_SAMPLING_INTERVAL}-{_MAX_SAMPLING_INTERVAL} ms, "
+                f"got {milliseconds}"
+            )
+        self._send(
+            bytes(
+                [
+                    START_SYSEX,
+                    SAMPLING_INTERVAL,
+                    milliseconds & 0x7F,
+                    (milliseconds >> 7) & 0x7F,
+                    END_SYSEX,
+                ]
+            )
+        )
+
+    def read_string(self) -> str | None:
+        """Return the latest text message the board has sent, or None."""
+        self._pump()
+        return self._parser.take_string()
+
+    def serial_config(
+        self, port: int, baud: int, rx: int | None = None, tx: int | None = None
+    ) -> None:
+        """Open a serial-relay port at a baud rate (rx/tx pins for software serial)."""
+        message = [
+            START_SYSEX,
+            SERIAL_MESSAGE,
+            _SERIAL_CONFIG | (port & _SERIAL_PORT_MASK),
+            baud & 0x7F,
+            (baud >> 7) & 0x7F,
+            (baud >> 14) & 0x7F,
+        ]
+        if rx is not None and tx is not None:
+            message += [rx, tx]
+        message.append(END_SYSEX)
+        self._send(bytes(message))
+        # Start relaying inbound bytes from the port back to the host.
+        self._send(
+            bytes(
+                [
+                    START_SYSEX,
+                    SERIAL_MESSAGE,
+                    _SERIAL_READ | (port & _SERIAL_PORT_MASK),
+                    _SERIAL_READ_CONTINUOUS,
+                    END_SYSEX,
+                ]
+            )
+        )
+
+    def serial_write(self, port: int, data: Iterable[int]) -> None:
+        """Write bytes out of a serial-relay port."""
+        message = [START_SYSEX, SERIAL_MESSAGE, _SERIAL_WRITE | (port & _SERIAL_PORT_MASK)]
+        for value in data:
+            message += [value & 0x7F, (value >> 7) & 0x7F]
+        message.append(END_SYSEX)
+        self._send(bytes(message))
+
+    def serial_value(self, port: int) -> bytes:
+        """Return and clear the bytes received on a serial-relay port."""
+        self._pump()
+        return self._parser.drain_serial(port & _SERIAL_PORT_MASK)
+
+    def serial_close(self, port: int) -> None:
+        """Close a serial-relay port."""
+        self._send(
+            bytes(
+                [START_SYSEX, SERIAL_MESSAGE, _SERIAL_CLOSE | (port & _SERIAL_PORT_MASK), END_SYSEX]
+            )
+        )
 
     def report_firmware(self) -> tuple[int, int, str]:
         """Query the board's firmware name and (major, minor) version."""

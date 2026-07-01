@@ -68,6 +68,44 @@ class ProtocolClient(Protocol):
         """Read count bytes from an I2C device, optionally from a register."""
         ...
 
+    def i2c_read_continuous(self, address: int, count: int, register: int | None = None) -> None:
+        """Ask an I2C device to keep reporting count bytes until stopped."""
+        ...
+
+    def i2c_value(self, address: int, register: int | None = None) -> bytes | None:
+        """Return the latest continuously-reported I2C reply, or None."""
+        ...
+
+    def i2c_stop_reading(self, address: int) -> None:
+        """Stop a continuous I2C read for a device."""
+        ...
+
+    def sampling_interval(self, milliseconds: int) -> None:
+        """Set how often the board auto-reports analog and continuous I2C reads."""
+        ...
+
+    def read_string(self) -> str | None:
+        """Return the latest text message the board has sent, or None."""
+        ...
+
+    def serial_config(
+        self, port: int, baud: int, rx: int | None = None, tx: int | None = None
+    ) -> None:
+        """Open a serial-relay port at a baud rate."""
+        ...
+
+    def serial_write(self, port: int, data: Iterable[int]) -> None:
+        """Write bytes out of a serial-relay port."""
+        ...
+
+    def serial_value(self, port: int) -> bytes:
+        """Return and clear bytes received on a serial-relay port."""
+        ...
+
+    def serial_close(self, port: int) -> None:
+        """Close a serial-relay port."""
+        ...
+
     def report_firmware(self) -> tuple[int, int, str]:
         """Query the firmware (major, minor, name)."""
         ...

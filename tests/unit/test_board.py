@@ -121,6 +121,40 @@ def test_i2c_read_returns_reply(board: Board) -> None:
 
 
 @pytest.mark.unit
+def test_i2c_continuous_and_stop_delegate(board: Board) -> None:
+    board.i2cReadContinuous(0x68, 6, register=0x3B)
+    board.i2cStopReading(0x68)
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    assert ("i2c_read_continuous", (0x68, 6, 0x3B)) in protocol.calls
+    assert ("i2c_stop_reading", (0x68,)) in protocol.calls
+
+
+@pytest.mark.unit
+def test_i2c_value_delegates(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    protocol.i2c_latest = bytes([0xAB, 0xCD])
+    assert board.i2cValue(0x68, register=0x3B) == bytes([0xAB, 0xCD])
+
+
+@pytest.mark.unit
+def test_sampling_interval_delegates(board: Board) -> None:
+    board.samplingInterval(50)
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    assert ("sampling_interval", (50,)) in protocol.calls
+
+
+@pytest.mark.unit
+def test_read_string_delegates(board: Board) -> None:
+    protocol = board._protocol
+    assert isinstance(protocol, MockProtocol)
+    protocol.string = "board says hi"
+    assert board.readString() == "board says hi"
+
+
+@pytest.mark.unit
 def test_info_returns_firmware_and_identity(board: Board) -> None:
     protocol = board._protocol
     assert isinstance(protocol, MockProtocol)

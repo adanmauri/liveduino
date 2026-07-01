@@ -32,10 +32,13 @@ from liveduino.protocols.firmata import (
     REPORT_ANALOG,
     REPORT_DIGITAL,
     REPORT_FIRMWARE,
+    SAMPLING_INTERVAL,
+    SERIAL_MESSAGE,
     SERVO_CONFIG,
     SET_DIGITAL_PIN_VALUE,
     SET_PIN_MODE,
     START_SYSEX,
+    STRING_DATA,
     FirmataProtocol,
 )
 from tests.shared.fake_driver import FakeDriver
@@ -372,6 +375,112 @@ def test_pin_state_query_combines_multibyte_value() -> None:
     # value 200 = 0x48 | (0x01 << 7).
     driver.feed(bytes([START_SYSEX, PIN_STATE_RESPONSE, 9, 0x03, 0x48, 0x01, END_SYSEX]))
     assert protocol.pin_state_query(9) == (0x03, 200)
+
+
+@pytest.mark.unit
+def test_i2c_read_continuous_encodes_request() -> None:
+    protocol, driver = _connected()
+    protocol.i2c_read_continuous(0x68, 6, register=0x3B)
+    assert bytes(driver.written) == bytes(
+        [START_SYSEX, I2C_REQUEST, 0x68, 0x10, 0x3B, 0x00, 6, 0, END_SYSEX]
+    )
+
+
+@pytest.mark.unit
+def test_i2c_value_peeks_latest_without_consuming() -> None:
+    protocol, driver = _connected()
+    driver.feed(_i2c_reply_bytes(0x68, 0x3B, [0x11, 0x22]))
+    assert protocol.i2c_value(0x68, register=0x3B) == bytes([0x11, 0x22])
+    assert protocol.i2c_value(0x68, register=0x3B) == bytes([0x11, 0x22])
+
+
+@pytest.mark.unit
+def test_i2c_value_none_without_data() -> None:
+    protocol, _ = _connected()
+    assert protocol.i2c_value(0x68) is None
+
+
+@pytest.mark.unit
+def test_i2c_stop_reading_encodes_request() -> None:
+    protocol, driver = _connected()
+    protocol.i2c_stop_reading(0x68)
+    assert bytes(driver.written) == bytes([START_SYSEX, I2C_REQUEST, 0x68, 0x18, END_SYSEX])
+
+
+@pytest.mark.unit
+def test_sampling_interval_encodes_sysex() -> None:
+    protocol, driver = _connected()
+    protocol.sampling_interval(100)
+    assert bytes(driver.written) == bytes(
+        [START_SYSEX, SAMPLING_INTERVAL, 100 & 0x7F, (100 >> 7) & 0x7F, END_SYSEX]
+    )
+
+
+@pytest.mark.unit
+def test_sampling_interval_invalid_raises() -> None:
+    protocol, _ = _connected()
+    with pytest.raises(InvalidValueError):
+        protocol.sampling_interval(0)
+
+
+@pytest.mark.unit
+def test_read_string_decodes_and_consumes() -> None:
+    protocol, driver = _connected()
+    text = "I2C: error"
+    chars: list[int] = []
+    for char in text:
+        chars += [ord(char) & 0x7F, (ord(char) >> 7) & 0x7F]
+    driver.feed(bytes([START_SYSEX, STRING_DATA, *chars, END_SYSEX]))
+    assert protocol.read_string() == text
+    assert protocol.read_string() is None  # consumed
+
+
+@pytest.mark.unit
+def test_serial_config_opens_port_and_starts_reading() -> None:
+    protocol, driver = _connected()
+    protocol.serial_config(1, 9600)
+    assert bytes(driver.written) == bytes(
+        [
+            START_SYSEX, SERIAL_MESSAGE, 0x10 | 1,
+            9600 & 0x7F, (9600 >> 7) & 0x7F, (9600 >> 14) & 0x7F, END_SYSEX,
+            START_SYSEX, SERIAL_MESSAGE, 0x30 | 1, 0x00, END_SYSEX,
+        ]
+    )
+
+
+@pytest.mark.unit
+def test_serial_config_includes_software_serial_pins() -> None:
+    protocol, driver = _connected()
+    protocol.serial_config(8, 4800, rx=10, tx=11)
+    expected = [
+        START_SYSEX, SERIAL_MESSAGE, 0x10 | 8,
+        4800 & 0x7F, (4800 >> 7) & 0x7F, (4800 >> 14) & 0x7F, 10, 11, END_SYSEX,
+    ]
+    assert bytes(driver.written[: len(expected)]) == bytes(expected)
+
+
+@pytest.mark.unit
+def test_serial_write_encodes_bytes() -> None:
+    protocol, driver = _connected()
+    protocol.serial_write(1, [0x41, 0x42])
+    assert bytes(driver.written) == bytes(
+        [START_SYSEX, SERIAL_MESSAGE, 0x20 | 1, 0x41, 0x00, 0x42, 0x00, END_SYSEX]
+    )
+
+
+@pytest.mark.unit
+def test_serial_value_drains_received_bytes() -> None:
+    protocol, driver = _connected()
+    driver.feed(bytes([START_SYSEX, SERIAL_MESSAGE, 0x40 | 1, 0x48, 0x00, 0x49, 0x00, END_SYSEX]))
+    assert protocol.serial_value(1) == bytes([0x48, 0x49])
+    assert protocol.serial_value(1) == b""  # drained
+
+
+@pytest.mark.unit
+def test_serial_close_encodes_request() -> None:
+    protocol, driver = _connected()
+    protocol.serial_close(1)
+    assert bytes(driver.written) == bytes([START_SYSEX, SERIAL_MESSAGE, 0x50 | 1, END_SYSEX])
 
 
 @pytest.mark.unit
