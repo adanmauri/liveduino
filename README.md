@@ -270,70 +270,34 @@ timing (`delay`, `millis`, ...). Device functions that StandardFirmata cannot pe
 | Analog input | `analogRead` | ✅ built in |
 | PWM output | `analogWrite` | ✅ built in |
 | **Servo** | `servoWrite`, `servoConfig` | ✅ built in (Servo lib) |
-| **I2C** | `i2cConfig`, `i2cWrite`, `i2cRead` | ✅ built in (Wire lib) |
+| **I2C** | `board.wire` (Arduino `Wire`) | ✅ built in (Wire lib) |
 | **Discovery** | `info`, `capabilities`, `pinState`, `status` | ✅ built in (Firmata queries) |
-| **Streaming & serial** | `samplingInterval`, `i2cReadContinuous`/`i2cValue`, `readString`, `serial` | ✅ built in |
+| **Streaming & serial** | `samplingInterval`, `readString`, `serial`, continuous I2C | ✅ built in |
 | Host-side timing | `delay`, `delayMicroseconds`, `millis`, `micros` | ✅ host only |
 | Tone / pulse / shift | `tone`, `noTone`, `pulseIn`, `shiftOut`, `shiftIn` | ⚠️ raise `UnsupportedOperationError` |
 
-Servo needs no extra setup: `servoWrite(pin, angle)` attaches the servo and moves it (0-180°);
-`servoConfig(pin, minPulse, maxPulse)` customises the pulse range first if your servo needs it.
+**Servo** and **I2C** are the real Arduino names too. I2C *is* Arduino's `Wire` — alias it
+and a sketch ports verbatim:
 
 ```python
-board.servoWrite(9, 90)            # center a servo on pin 9
-board.servoConfig(9, 600, 2400)    # optional: set min/max pulse (µs) before writing
-```
+board.servoWrite(9, 90)             # servo on pin 9
 
-**I2C** talks to any device on the bus (sensors, OLED displays, RTCs, ...). Call `i2cConfig`
-once to enable the bus, then `i2cWrite` / `i2cRead`:
-
-```python
-board.i2cConfig()                       # enable the I2C bus (once)
-board.i2cWrite(0x68, [0x6B, 0x00])      # wake an MPU-6050 (write 0x00 to register 0x6B)
-data = board.i2cRead(0x68, 6, register=0x3B)  # read 6 bytes starting at register 0x3B
-```
-
-> **Not identical to Arduino's `Wire`.** liveduino exposes a higher-level, batched I2C API
-> over Firmata rather than the stateful `Wire` object. The mapping is direct:
->
-> | Arduino `Wire` | liveduino |
-> | --- | --- |
-> | `Wire.begin()` | `board.i2cConfig()` |
-> | `Wire.beginTransmission(a)` + `write(...)` + `endTransmission()` | `board.i2cWrite(a, [...])` |
-> | `Wire.requestFrom(a, n)` + `read()` | `board.i2cRead(a, n)` |
-> | register read (`write(reg)` then `requestFrom`) | `board.i2cRead(a, n, register=reg)` |
->
-> Other Arduino calls (`pinMode`, `digitalWrite`, `analogRead`, `servoWrite`) keep the exact
-> Arduino name and semantics; I2C differs because Arduino models it as an object, not free
-> functions.
-
-Prefer the literal Arduino `Wire` calls? `board.wire` mirrors them line for line. Alias it
-once (`Wire = board.wire`, standing in for `#include <Wire.h>`) and the rest is identical to
-an Arduino sketch:
-
-```python
-Wire = board.wire          # in place of: #include <Wire.h>
-
+Wire = board.wire                   # in place of: #include <Wire.h>
 Wire.begin()
-Wire.beginTransmission(0x68)
-Wire.write(0x3B)
-Wire.endTransmission()
-Wire.requestFrom(0x68, 6)
+Wire.requestFrom(0x68, 6, 0x3B)     # read 6 bytes from register 0x3B (MPU-6050)
 while Wire.available():
     value = Wire.read()
 ```
 
-**Discovery** lets you ask a connected board about itself, instead of trusting the catalog:
+**Discovery** — ask the board about itself instead of trusting the catalog:
 
 ```python
-board.info()            # firmware name/version + board identity
-board.pinState(13)      # a pin's live mode (by name) and value
-board.status()          # snapshot of every pin
-board.capabilities()    # per-pin modes: read from the firmware once (cached), else the catalog
+board.info()          # firmware + board identity
+board.status()        # live state of every pin
+board.capabilities()  # per-pin modes read from the firmware (cached), else the catalog
 ```
 
-Full method table, analog pin model, and the `map_range` / `constrain` helpers:
-[`docs/API.md`](docs/API.md).
+Full method table, servo/I2C/discovery/serial details, and helpers: [`docs/API.md`](docs/API.md).
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 

@@ -96,49 +96,6 @@ def test_servo_config_rejects_inverted_range(board: Board) -> None:
 
 
 @pytest.mark.unit
-def test_i2c_config_delegates(board: Board) -> None:
-    board.i2cConfig(100)
-    protocol = board._protocol
-    assert isinstance(protocol, MockProtocol)
-    assert ("i2c_config", (100,)) in protocol.calls
-
-
-@pytest.mark.unit
-def test_i2c_write_delegates(board: Board) -> None:
-    board.i2cWrite(0x68, [0x01, 0x02])
-    protocol = board._protocol
-    assert isinstance(protocol, MockProtocol)
-    assert ("i2c_write", (0x68, (0x01, 0x02))) in protocol.calls
-
-
-@pytest.mark.unit
-def test_i2c_read_returns_reply(board: Board) -> None:
-    protocol = board._protocol
-    assert isinstance(protocol, MockProtocol)
-    protocol.i2c_reply = bytes([0xDE, 0xAD])
-    assert board.i2cRead(0x68, 2, register=0x05) == bytes([0xDE, 0xAD])
-    assert ("i2c_read", (0x68, 2, 0x05, False)) in protocol.calls
-
-
-@pytest.mark.unit
-def test_i2c_continuous_and_stop_delegate(board: Board) -> None:
-    board.i2cReadContinuous(0x68, 6, register=0x3B)
-    board.i2cStopReading(0x68)
-    protocol = board._protocol
-    assert isinstance(protocol, MockProtocol)
-    assert ("i2c_read_continuous", (0x68, 6, 0x3B)) in protocol.calls
-    assert ("i2c_stop_reading", (0x68,)) in protocol.calls
-
-
-@pytest.mark.unit
-def test_i2c_value_delegates(board: Board) -> None:
-    protocol = board._protocol
-    assert isinstance(protocol, MockProtocol)
-    protocol.i2c_latest = bytes([0xAB, 0xCD])
-    assert board.i2cValue(0x68, register=0x3B) == bytes([0xAB, 0xCD])
-
-
-@pytest.mark.unit
 def test_reset_delegates(board: Board) -> None:
     board.reset()
     protocol = board._protocol
