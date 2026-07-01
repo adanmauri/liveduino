@@ -21,11 +21,16 @@
 | MKR1000 | Planned | Firmata | StandardFirmataWiFi |
 | MKR WiFi 1010 | Planned | Firmata | StandardFirmataWiFi |
 | Nano 33 IoT | Planned | Firmata | StandardFirmataWiFi |
-| Pinguino | Planned | LiveProtocol | Live interpreter (Frameduino-style) |
+| Pinguino (8-bit, PIC18F) | Planned | Firmata | work in progress on the `experimental` branch |
 
 All ids use the `arduino:<model>` form (e.g. `arduino:nano`, `arduino:pro`,
 `arduino:diecimila`). Each board profile only declares its pin map and
 capabilities; the protocol (Firmata) and driver (serial/TCP/Bluetooth) are shared.
+
+Pinguino support is planned; a Firmata-based prototype (a `PinguinoFirmata` firmware plus
+PIC18F board profiles) lives in the
+[`experimental`](https://github.com/adanmauri/liveduino/tree/experimental) branch, not yet
+merged to `main`.
 
 The Firmware column lists the sketch `liveduino-cli flash` bundles and writes over the serial
 bootloader, so it is the serial StandardFirmata image. A board may also ship extra firmware
