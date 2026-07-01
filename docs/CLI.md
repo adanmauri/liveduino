@@ -70,3 +70,23 @@ liveduino-cli ports
 
 Prints the serial ports detected on the host, to help you find the right `--port`
 value for `flash` or for connecting.
+
+## Firmware variants
+
+The Firmata family ships several firmware sketches. liveduino bundles and flashes
+**StandardFirmata** by default, plus **StandardFirmataEthernet** for the Ethernet board.
+liveduino's client speaks the base Firmata 2.x wire protocol, which all of these share for
+core I/O, so it can talk to any StandardFirmata build already on your board.
+
+| Firmware | Transport | Over StandardFirmata it adds | liveduino |
+| --- | --- | --- | --- |
+| **StandardFirmata** | Serial | digital/analog I/O, PWM, servo, I2C | ✅ default |
+| **StandardFirmataPlus** | Serial | serial-device (UART/SoftwareSerial) support | not bundled |
+| **StandardFirmataEthernet** | Ethernet (TCP) | network transport | ✅ bundled extra |
+| **StandardFirmataWiFi** | Wi-Fi (TCP) | network transport (needs `wifiConfig.h`) | not bundled |
+| **StandardFirmataBLE** | Bluetooth LE | BLE transport (needs config) | not bundled |
+| **ConfigurableFirmata** | Serial / net | modular features: DHT, stepper, I2C, SPI, encoder | not bundled |
+
+The richer variants (ConfigurableFirmata) add features that would need extra client support
+before liveduino can drive them. Note `tone`/`pulseIn`/`shift` are in **none** of these — the
+Firmata protocol does not define them (see [`ARCHITECTURE.md`](ARCHITECTURE.md#not-supported-tone--pulsein--shift)).
