@@ -101,7 +101,7 @@ jobs:
         run: make firmware
 
       - name: Open pull request with updated firmware
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: firmware/rebuild
           title: "chore(firmware): rebuild bundled StandardFirmata images"
