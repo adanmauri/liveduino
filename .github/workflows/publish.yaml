@@ -38,6 +38,9 @@ jobs:
             uv.lock
             pyproject.toml
 
+      - name: Render PyPI-safe README
+        run: uv run python scripts/render_pypi_readme.py
+
       - name: Build sdist and wheel
         run: uv build
 
