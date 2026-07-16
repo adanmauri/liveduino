@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-16
+
 ### Added
 
 - Servo support over the bundled Servo library: `servoWrite`, `servoConfig`.
@@ -44,5 +46,5 @@ Initial release.
 - Firmware build pipeline (`scripts/build_firmware.py`, `make firmware`, GitHub workflow).
 - 100% unit-test coverage plus skippable real-hardware integration tests.
 
-[Unreleased]: https://github.com/adanmauri/liveduino/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/adanmauri/liveduino/releases/tag/v0.1.0
+[Unreleased]: https://github.com/adanmauri/liveduino/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/adanmauri/liveduino/releases/tag/v0.2.0
