@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "liveduino"
-version = "0.2.0"
+version = "0.2.1"
 description = "Live Wiring commands from Python to your microcontroller"
 readme = "README.md"
 requires-python = ">=3.13"
