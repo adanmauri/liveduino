@@ -5,20 +5,22 @@
 
 <h3>A live Python REPL for your board: type a command, watch the hardware react instantly.</h3>
 
-[![Python](https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![uv](https://img.shields.io/badge/uv-managed-7C3AED?style=flat-square)](https://docs.astral.sh/uv/)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-374151?style=flat-square)](#prerequisites)
-[![Arduino](https://img.shields.io/badge/Arduino-UNO%20%2B%20Firmata-00979D?style=flat-square&logo=arduino&logoColor=white)](#supported-boards)
-[![License](https://img.shields.io/badge/License-MIT-525252?style=flat-square&logo=opensourceinitiative&logoColor=white)](LICENSE)
+<!-- What the library is: the release on PyPI, the Python it needs, and its license. -->
+[![PyPI](https://img.shields.io/pypi/v/liveduino?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/liveduino/)
+[![Python](https://img.shields.io/badge/python-3.13%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-525252?style=flat-square&logo=opensourceinitiative&logoColor=white)](LICENSE)
 
 ---
 
-[![tests](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/tests.yaml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=tests)](https://github.com/adanmauri/liveduino/actions/workflows/tests.yaml)
-[![quality](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/code-quality.yaml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=quality)](https://github.com/adanmauri/liveduino/actions/workflows/code-quality.yaml)
-[![security](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/security.yaml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=security)](https://github.com/adanmauri/liveduino/actions/workflows/security.yaml)
-[![firmware](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/firmware.yaml?branch=main&style=flat-square&logo=arduino&logoColor=white&label=firmware)](https://github.com/adanmauri/liveduino/actions/workflows/firmware.yaml)
-[![publish](https://img.shields.io/github/actions/workflow/status/adanmauri/liveduino/publish.yaml?style=flat-square&logo=pypi&logoColor=white&label=publish)](https://github.com/adanmauri/liveduino/actions/workflows/publish.yaml)
-[![coverage](https://img.shields.io/badge/coverage-100%25-22C55E?style=flat-square&logo=pytest&logoColor=white)](https://github.com/adanmauri/liveduino/actions/workflows/tests.yaml)
+<!-- Quality: the workflows on main, and the coverage badge published by the tests workflow. -->
+[![Tests & Coverage](https://github.com/adanmauri/liveduino/actions/workflows/tests.yaml/badge.svg?branch=main)](https://github.com/adanmauri/liveduino/actions/workflows/tests.yaml)
+[![Code Quality](https://github.com/adanmauri/liveduino/actions/workflows/code-quality.yaml/badge.svg?branch=main)](https://github.com/adanmauri/liveduino/actions/workflows/code-quality.yaml)
+[![Security](https://github.com/adanmauri/liveduino/actions/workflows/security.yaml/badge.svg?branch=main)](https://github.com/adanmauri/liveduino/actions/workflows/security.yaml)
+[![Firmware](https://github.com/adanmauri/liveduino/actions/workflows/firmware.yaml/badge.svg?branch=main)](https://github.com/adanmauri/liveduino/actions/workflows/firmware.yaml)
+[![Coverage](https://github.com/adanmauri/liveduino/raw/badges/coverage.svg)](https://github.com/adanmauri/liveduino/actions/workflows/tests.yaml)
+<br>
+[![Dependabot Updates](https://github.com/adanmauri/liveduino/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/adanmauri/liveduino/actions/workflows/dependabot/dependabot-updates)
+[![TODO to Issue](https://github.com/adanmauri/liveduino/actions/workflows/todo-to-issue.yaml/badge.svg?branch=main)](https://github.com/adanmauri/liveduino/actions/workflows/todo-to-issue.yaml)
 
 ---
 
@@ -333,11 +335,11 @@ Full reference: [`docs/CLI.md`](docs/CLI.md).
 
 ## Development
 
-Requires [uv](https://docs.astral.sh/uv/) (it installs Python 3.13 if needed).
+Requires [uv](https://docs.astral.sh/uv/) (it installs the development Python, 3.14, if needed).
 
 ```bash
 make setup              # dev environment + git hooks
-make check              # every lint hook + the 100% coverage gate
+make check              # every lint hook, then the tests on 3.14 and 3.13
 ```
 
 Every `make` target, the coverage gate, and how to run hardware integration tests:
