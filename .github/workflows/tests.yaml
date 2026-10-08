@@ -1,7 +1,7 @@
 ---
 name: Tests
 
-on: # yamllint disable-line rule:truthy
+on:
   workflow_dispatch:
   push:
     branches:
@@ -10,38 +10,78 @@ on: # yamllint disable-line rule:truthy
     branches:
       - main
 
+permissions: {}
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
 jobs:
+  changes:
+    # Pull requests that change none of the files the tests depend on skip them; main always runs
+    # them (docs/adr/0005). The filter lives in a job, not in `paths:`, so a skipped run still
+    # reports its checks instead of leaving them pending.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      run: ${{ steps.diff.outputs.run }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Decide whether the tests run
+        id: diff
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          TESTED_FILES: >-
+            ^(src/|tests/|scripts/|pyproject\.toml|uv\.lock|\.python-version|README\.md|LICENSE|\.github/workflows/tests\.yaml)
+        run: |
+          run=true
+          if [ "$EVENT_NAME" = pull_request ] &&
+            ! git diff --name-only "origin/$BASE_REF...HEAD" | grep -qE "$TESTED_FILES"; then
+            run=false
+          fi
+          echo "Run the tests: $run"
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
   unit-coverage:
     name: Unit tests + coverage gate
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+    permissions:
+      contents: read
 
-      - name: Setup uv (with cache)
-        uses: astral-sh/setup-uv@v7
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: "3.13"
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
           enable-cache: true
-          cache-dependency-glob: |
-            uv.lock
-            pyproject.toml
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --locked --no-default-groups --group test
 
       - name: Run unit tests with 100% coverage gate
+        env:
+          # Keep the test group installed above; `uv run` would sync the whole dev group.
+          UV_NO_SYNC: "1"
         run: make test-coverage
 
-  # Integration tests require a physical Arduino board reachable via
-  # LIVEDUINO_PORT and are not run on GitHub-hosted runners. Run them locally
-  # or on a self-hosted runner with hardware attached:
+      - name: Build sdist and wheel
+        run: uv build
+
+  # Integration tests need a physical board reachable through LIVEDUINO_PORT and do not run on
+  # GitHub-hosted runners. Run them locally or on a self-hosted runner with hardware attached:
   #   LIVEDUINO_PORT=/dev/ttyACM0 make test-integration
