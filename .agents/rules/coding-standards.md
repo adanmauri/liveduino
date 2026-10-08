@@ -72,7 +72,7 @@ descriptive line.
   `LIVEDUINO_PORT`, and skip without one.
 - Test public methods and attributes only, never `_private` ones or implementation details.
 - Tests follow this same style guide: docstrings, type hints, formatting.
-- `make test` requires **100% line coverage** of `src/liveduino/`. Touching an uncovered
+- `make test-coverage` requires **100% line coverage** of `src/liveduino/`. Touching an uncovered
   path means adding or extending unit tests.
 
 ## Dependencies: [ADR-0001](../../docs/adr/0001-uv-is-the-development-toolchain.md)

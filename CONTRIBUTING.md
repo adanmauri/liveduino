@@ -11,7 +11,7 @@ By participating you agree to abide by the
 1. Fork the repository.
 2. Clone your fork: `git clone https://github.com/<your-user>/liveduino.git`
 3. Set up the development environment. It needs [uv](https://docs.astral.sh/uv/), which installs
-   the development Python (3.14) and the oldest supported one (3.13) if they are missing:
+   Python 3.13 if it is missing:
 
    ```bash
    make setup              # uv sync --locked, then installs the git hooks (pre-commit, commit-msg)
@@ -24,7 +24,7 @@ By participating you agree to abide by the
 3. Run the full gate before pushing; the commit hook runs the same linters on staged files:
 
    ```bash
-   make check          # every lint hook, the tests with the 100% gate, then the tests on 3.13
+   make check          # every lint hook + 100% coverage gate
    ```
 
 4. Push to your fork and open a pull request against `main`; fill the template, and under Test

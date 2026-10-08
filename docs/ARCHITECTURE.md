@@ -134,4 +134,4 @@ interpreter evolved from the original [Frameduino](https://github.com/adanmauri/
 - **Unit tests** (`tests/unit/`, `@pytest.mark.unit`): mocks only, no hardware.
 - **Integration tests** (`tests/integration/`, `@pytest.mark.integration`): require `LIVEDUINO_PORT` and StandardFirmata on the board.
 
-Coverage gate: 100% line coverage on `src/liveduino/` via `make test`.
+Coverage gate: 100% line coverage on `src/liveduino/` via `make test-coverage`.

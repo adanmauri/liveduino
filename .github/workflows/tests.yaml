@@ -1,5 +1,5 @@
 ---
-name: Tests & Coverage
+name: Tests
 
 on:
   workflow_dispatch:
@@ -19,9 +19,8 @@ concurrency:
 jobs:
   changes:
     # Pull requests that change none of the files the tests depend on skip them; main always runs
-    # them, and publishes the badge (docs/adr/0005). The filter lives in a job, not in `paths:`,
-    # because `test` is a required check: a job skipped by its condition reports success, while a
-    # workflow that never starts leaves the check pending and blocks the merge.
+    # them (docs/adr/0005). The filter lives in a job, not in `paths:`, so a skipped run still
+    # reports its checks instead of leaving them pending.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -51,7 +50,8 @@ jobs:
           echo "Run the tests: $run"
           echo "run=$run" >> "$GITHUB_OUTPUT"
 
-  test:
+  unit-coverage:
+    name: Unit tests + coverage gate
     needs: changes
     if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
@@ -72,11 +72,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --no-default-groups --group test
 
-      - name: Run unit tests with the 100% coverage gate
+      - name: Run unit tests with 100% coverage gate
         env:
           # Keep the test group installed above; `uv run` would sync the whole dev group.
           UV_NO_SYNC: "1"
-        run: make test
+        run: make test-coverage
 
       - name: Build sdist and wheel
         run: uv build
@@ -87,29 +87,6 @@ jobs:
         uses: adanmauri/coverage-badges@3e2fea272ad148ce431db96b51e5081a13c7c415 # v1.0.0
         with:
           report: coverage.xml
-
-  test-compat:
-    # The oldest Python the library supports (requires-python), in a throwaway environment.
-    needs: changes
-    if: needs.changes.outputs.run == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          enable-cache: true
-
-      - name: Run unit tests on the oldest supported Python
-        run: make test-compat
 
   # Integration tests need a physical board reachable through LIVEDUINO_PORT and do not run on
   # GitHub-hosted runners. Run them locally or on a self-hosted runner with hardware attached:

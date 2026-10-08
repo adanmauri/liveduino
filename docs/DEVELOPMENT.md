@@ -6,10 +6,9 @@ change, locally and in CI, in [CI.md](CI.md).
 
 ## Setup
 
-Needs [uv](https://docs.astral.sh/uv/) and `git`. uv installs the Pythons the checks need when
-they are missing: 3.14 for development (`.python-version`) and 3.13, the oldest the library
-supports, for `make test-compat`. pre-commit, which runs through `uvx`, installs the Node.js and
-Go runtimes some hooks need (the first `make setup` takes a few minutes for that).
+Needs [uv](https://docs.astral.sh/uv/) and `git`. uv installs Python 3.13 (from
+`.python-version`) when it is missing, and pre-commit, which runs through `uvx`, installs the
+Node.js and Go runtimes some hooks need (the first `make setup` takes a few minutes for that).
 
 ```bash
 make setup            # uv sync --locked, then installs the pre-commit and commit-msg hooks
@@ -21,21 +20,25 @@ make firmware-setup   # only when you work on the bundled firmware (arduino-cli 
 
 ## Commands
 
-`make` with no target lists them all, grouped. The ones you will use most:
+`make` with no target prints this list, grouped.
 
-| Target                                              | What it does                                                                                    |
-|-----------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `make setup`                                        | Install the dev environment and the git hooks (pre-commit, commit-msg)                          |
-| `make check`                                        | `lint`, `test`, then `test-compat`: the definition of done                                      |
-| `make lint`                                         | Every hook in [`.pre-commit-config.yaml`](../.pre-commit-config.yaml) over the whole repository |
-| `make test`                                         | Unit tests with the 100% coverage gate on 3.14 (`ARGS="..."` goes to pytest)                    |
-| `make test-compat`                                  | Unit tests on 3.13, the oldest supported Python, in a throwaway environment                     |
-| `make test-integration`                             | Tests on a connected board (`LIVEDUINO_PORT`; see below)                                        |
-| `make type-check` / `make security` / `make format` | mypy and Pyright / Bandit / Black, isort and `ruff --fix` on a path (`make format tests`)       |
-| `make build`                                        | Build the sdist and wheel                                                                       |
-| `make firmware-setup` / `make firmware`             | Install the pinned arduino-cli toolchain / rebuild the bundled firmware                         |
-| `make sync-agents` / `make check-agents`            | Regenerate / verify the agent pointers from `.agents/`                                          |
-| `make actions ls` / `make actions workflow-<name>`  | List / trigger a GitHub Actions workflow via `gh`                                               |
+| Target                                             | What it does                                                                                    |
+|----------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| `make setup`                                       | Install the dev environment and the git hooks (pre-commit, commit-msg)                          |
+| `make install`                                     | Install the runtime dependencies only                                                           |
+| `make check`                                       | `lint`, then `test-coverage`: the definition of done                                            |
+| `make lint`                                        | Every hook in [`.pre-commit-config.yaml`](../.pre-commit-config.yaml) over the whole repository |
+| `make type-check`                                  | mypy and Pyright only, on a path (`make type-check src`): a quick subset of `lint`              |
+| `make security`                                    | Bandit only, on a path: a quick subset of `lint`                                                |
+| `make format`                                      | Black, isort, `ruff --fix` on a path                                                            |
+| `make test-coverage`                               | Unit tests with the 100% coverage gate                                                          |
+| `make test-unit` / `make test`                     | Unit tests / every test (`COVERAGE=1` adds coverage, `ARGS="..."` goes to pytest)               |
+| `make test-integration`                            | Integration tests (`LIVEDUINO_PORT`, or `LIVEDUINO_FLASH_PORT` to reflash)                      |
+| `make build`                                       | Build the sdist and wheel                                                                       |
+| `make firmware-setup`                              | Install the pinned arduino-cli core + libraries                                                 |
+| `make firmware`                                    | Rebuild the bundled StandardFirmata hex (needs `firmware-setup`)                                |
+| `make sync-agents` / `make check-agents`           | Regenerate / verify the agent pointers from `.agents/`                                          |
+| `make actions ls` / `make actions workflow-<name>` | List / trigger a GitHub Actions workflow via `gh`                                               |
 
 ## Conventions
 
@@ -140,8 +143,7 @@ push/PR whose bundled firmware is out of date.
 ## Releasing
 
 A release publishes to PyPI: `publish.yaml` builds and uploads the package when a GitHub release
-is published. The repository has immutable releases turned on, so once published a `vX.Y.Z` tag
-can never move or be deleted, and PyPI never accepts the same version twice: a release is final.
+is published. PyPI never accepts the same version twice, so a release is final.
 Agents prepare the notes and the commands; a person runs them (`.claude/settings.json` does not
 let agents create tags or releases).
 
