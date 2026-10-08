@@ -15,7 +15,7 @@ of which tool runs where is in [`docs/CI.md`](../../docs/CI.md).
 - Never use the em dash character (U+2014): use a comma, colon, parentheses or a period instead.
   This applies to docs, comments, commit messages and any other text.
 
-## Python
+## Python: [ADR-0015](../../docs/adr/0015-python-3-13-is-the-minimum-version.md)
 
 - **Python 3.13+** syntax.
 - Built-in generics and unions: `dict[str, int]`, `list[str] | None`, `Board | None`. Import from
@@ -81,7 +81,8 @@ descriptive line.
   hand, and never hand-edit `uv.lock`, which is committed.
 - Runtime dependencies (`[project.dependencies]`) declare compatible ranges (`pyserial>=3.5`);
   `uv.lock` pins them. Adding one needs approval: prefer the standard library and the existing
-  `pyserial` stack.
+  `pyserial` stack
+  ([ADR-0013](../../docs/adr/0013-the-runtime-depends-only-on-the-standard-library-and-pyserial.md)).
 - Development tools live in the `test` and `lint` dependency groups (`dev` includes both). Add one
   with `uv add --group <test|lint> <package>`.
 - Keep every dependency list in **alphabetical order**.
