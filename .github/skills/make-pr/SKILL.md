@@ -1,10 +1,11 @@
 ---
 name: make-pr
-description: Compatibility wrapper for GitHub Copilot skills. Canonical implementation lives in .agents/skills/make-pr/SKILL.md.
+description: Create pull requests with consistent title/body, correct base branch, and verified branch state. Use when the user asks to open a PR from the current branch.
 ---
 
-# Make PR (Compatibility Wrapper)
+# Make Pull Request
 
-Use the canonical skill:
+**Source of truth:** The full instructions for this skill live in
+[`.agents/skills/make-pr/SKILL.md`](../../../.agents/skills/make-pr/SKILL.md).
 
-- `../../../.agents/skills/make-pr/SKILL.md`
+When this skill is invoked, read that file and follow its instructions completely.

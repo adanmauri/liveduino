@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(make check)",
+      "Bash(make check-*)",
+      "Bash(make test)",
+      "Bash(make test-unit*)",
+      "Bash(make test-coverage*)",
+      "Bash(make lint)",
+      "Bash(make type-check*)",
+      "Bash(make security*)",
+      "Bash(make format*)",
+      "Bash(make build)",
+      "Bash(make sync-agents)",
+      "Bash(make help)",
+      "Bash(make actions ls)",
+      "Bash(uv run --no-project tooling/*)",
+      "Bash(uv run pytest *)",
+      "Bash(uvx pre-commit@* run *)",
+      "Bash(uv sync)",
+      "Bash(uv sync --locked)",
+      "Bash(uv lock --check)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh run view *)",
+      "Bash(gh run list *)",
+      "Bash(gh run watch *)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push origin main*)",
+      "Bash(git push * --tags*)",
+      "Bash(git tag *)",
+      "Bash(gh release create *)",
+      "Bash(uv publish*)",
+      "Bash(git * --no-verify*)",
+      "Bash(git commit -n*)",
+      "Read(./.env)",
+      "Read(./**/.env)"
+    ]
+  }
+}

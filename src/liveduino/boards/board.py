@@ -50,6 +50,7 @@ class Board(abc.ABC):
     and inherit the full Arduino/Wiring API. The base class validates pins,
     modes, and values before delegating to the active protocol client.
     """
+
     id: ClassVar[str]
     name: ClassVar[str]
     digital_pins: ClassVar[range]
@@ -90,9 +91,7 @@ class Board(abc.ABC):
         super().__init_subclass__(**kwargs)
         missing = [attr for attr in cls._REQUIRED_ATTRS if not hasattr(cls, attr)]
         if missing:
-            raise TypeError(
-                f"{cls.__name__} must define class attributes: {', '.join(missing)}"
-            )
+            raise TypeError(f"{cls.__name__} must define class attributes: {', '.join(missing)}")
 
     def __init__(self, protocol: Callable[[Driver], ProtocolClient] | None = None) -> None:
         """Create a board; protocol defaults to the board's protocol, set it to override."""

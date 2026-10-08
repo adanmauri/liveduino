@@ -1,27 +1,27 @@
 # Supported boards
 
-| Board | Status | Protocol | Firmware |
-| --- | --- | --- | --- |
-| Arduino UNO | Supported | Firmata | StandardFirmata |
-| Nano | Supported | Firmata | StandardFirmata |
-| Mini | Supported | Firmata | StandardFirmata |
-| Pro Mini | Supported | Firmata | StandardFirmata |
-| Fio | Supported | Firmata | StandardFirmata |
-| Duemilanove | Supported | Firmata | StandardFirmata |
-| Diecimila | Supported | Firmata | StandardFirmata |
-| Ethernet | Supported | Firmata | StandardFirmata |
-| BT | Supported | Firmata | StandardFirmata |
-| LilyPad | Supported | Firmata | StandardFirmata |
-| UNO Mini | Supported | Firmata | StandardFirmata |
-| Mega | Planned | Firmata | StandardFirmata |
-| Mega ADK | Planned | Firmata | StandardFirmata |
-| Leonardo | Planned | Firmata | StandardFirmata |
-| Micro | Planned | Firmata | StandardFirmata |
-| UNO WiFi Rev2 | Planned | Firmata | StandardFirmataWiFi |
-| MKR1000 | Planned | Firmata | StandardFirmataWiFi |
-| MKR WiFi 1010 | Planned | Firmata | StandardFirmataWiFi |
-| Nano 33 IoT | Planned | Firmata | StandardFirmataWiFi |
-| Pinguino (8-bit, PIC18F) | Planned | Firmata | work in progress on the `experimental` branch |
+| Board                    | Status    | Protocol | Firmware                                      |
+|--------------------------|-----------|----------|-----------------------------------------------|
+| Arduino UNO              | Supported | Firmata  | StandardFirmata                               |
+| Nano                     | Supported | Firmata  | StandardFirmata                               |
+| Mini                     | Supported | Firmata  | StandardFirmata                               |
+| Pro Mini                 | Supported | Firmata  | StandardFirmata                               |
+| Fio                      | Supported | Firmata  | StandardFirmata                               |
+| Duemilanove              | Supported | Firmata  | StandardFirmata                               |
+| Diecimila                | Supported | Firmata  | StandardFirmata                               |
+| Ethernet                 | Supported | Firmata  | StandardFirmata                               |
+| BT                       | Supported | Firmata  | StandardFirmata                               |
+| LilyPad                  | Supported | Firmata  | StandardFirmata                               |
+| UNO Mini                 | Supported | Firmata  | StandardFirmata                               |
+| Mega                     | Planned   | Firmata  | StandardFirmata                               |
+| Mega ADK                 | Planned   | Firmata  | StandardFirmata                               |
+| Leonardo                 | Planned   | Firmata  | StandardFirmata                               |
+| Micro                    | Planned   | Firmata  | StandardFirmata                               |
+| UNO WiFi Rev2            | Planned   | Firmata  | StandardFirmataWiFi                           |
+| MKR1000                  | Planned   | Firmata  | StandardFirmataWiFi                           |
+| MKR WiFi 1010            | Planned   | Firmata  | StandardFirmataWiFi                           |
+| Nano 33 IoT              | Planned   | Firmata  | StandardFirmataWiFi                           |
+| Pinguino (8-bit, PIC18F) | Planned   | Firmata  | work in progress on the `experimental` branch |
 
 All ids use the `arduino:<model>` form (e.g. `arduino:nano`, `arduino:pro`,
 `arduino:diecimila`). Each board profile only declares its pin map and

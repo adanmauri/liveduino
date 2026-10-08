@@ -159,8 +159,15 @@ def test_analog_write_uses_extended_analog_for_high_pins() -> None:
     protocol.analog_write(16, 200)
     assert bytes(driver.written) == bytes(
         [
-            SET_PIN_MODE, 16, 0x03,
-            START_SYSEX, EXTENDED_ANALOG, 16, 200 & 0x7F, (200 >> 7) & 0x7F, END_SYSEX,
+            SET_PIN_MODE,
+            16,
+            0x03,
+            START_SYSEX,
+            EXTENDED_ANALOG,
+            16,
+            200 & 0x7F,
+            (200 >> 7) & 0x7F,
+            END_SYSEX,
         ]
     )
 
@@ -187,8 +194,15 @@ def test_servo_write_uses_extended_analog_for_high_pins() -> None:
     protocol.servo_write(16, 90)
     assert bytes(driver.written) == bytes(
         [
-            SET_PIN_MODE, 16, 0x04,
-            START_SYSEX, EXTENDED_ANALOG, 16, 90 & 0x7F, (90 >> 7) & 0x7F, END_SYSEX,
+            SET_PIN_MODE,
+            16,
+            0x04,
+            START_SYSEX,
+            EXTENDED_ANALOG,
+            16,
+            90 & 0x7F,
+            (90 >> 7) & 0x7F,
+            END_SYSEX,
         ]
     )
 
@@ -340,9 +354,16 @@ def test_capability_query_parses_per_pin_modes() -> None:
     driver.feed(
         bytes(
             [
-                START_SYSEX, CAPABILITY_RESPONSE,
-                0x00, 0x01, 0x01, 0x01, 0x7F,
-                0x03, 0x08, 0x7F,
+                START_SYSEX,
+                CAPABILITY_RESPONSE,
+                0x00,
+                0x01,
+                0x01,
+                0x01,
+                0x7F,
+                0x03,
+                0x08,
+                0x7F,
                 END_SYSEX,
             ]
         )
@@ -355,9 +376,7 @@ def test_capability_query_parses_per_pin_modes() -> None:
 def test_analog_mapping_query_skips_non_analog_pins() -> None:
     protocol, driver = _connected()
     # pins 0,1 are not analog (0x7F); pin 2 -> channel 0, pin 3 -> channel 1.
-    driver.feed(
-        bytes([START_SYSEX, ANALOG_MAPPING_RESPONSE, 0x7F, 0x7F, 0x00, 0x01, END_SYSEX])
-    )
+    driver.feed(bytes([START_SYSEX, ANALOG_MAPPING_RESPONSE, 0x7F, 0x7F, 0x00, 0x01, END_SYSEX]))
     assert protocol.analog_mapping_query() == {2: 0, 3: 1}
     assert bytes(driver.written) == bytes([START_SYSEX, ANALOG_MAPPING_QUERY, END_SYSEX])
 
@@ -442,9 +461,18 @@ def test_serial_config_opens_port_and_starts_reading() -> None:
     protocol.serial_config(1, 9600)
     assert bytes(driver.written) == bytes(
         [
-            START_SYSEX, SERIAL_MESSAGE, 0x10 | 1,
-            9600 & 0x7F, (9600 >> 7) & 0x7F, (9600 >> 14) & 0x7F, END_SYSEX,
-            START_SYSEX, SERIAL_MESSAGE, 0x30 | 1, 0x00, END_SYSEX,
+            START_SYSEX,
+            SERIAL_MESSAGE,
+            0x10 | 1,
+            9600 & 0x7F,
+            (9600 >> 7) & 0x7F,
+            (9600 >> 14) & 0x7F,
+            END_SYSEX,
+            START_SYSEX,
+            SERIAL_MESSAGE,
+            0x30 | 1,
+            0x00,
+            END_SYSEX,
         ]
     )
 
@@ -454,8 +482,15 @@ def test_serial_config_includes_software_serial_pins() -> None:
     protocol, driver = _connected()
     protocol.serial_config(8, 4800, rx=10, tx=11)
     expected = [
-        START_SYSEX, SERIAL_MESSAGE, 0x10 | 8,
-        4800 & 0x7F, (4800 >> 7) & 0x7F, (4800 >> 14) & 0x7F, 10, 11, END_SYSEX,
+        START_SYSEX,
+        SERIAL_MESSAGE,
+        0x10 | 8,
+        4800 & 0x7F,
+        (4800 >> 7) & 0x7F,
+        (4800 >> 14) & 0x7F,
+        10,
+        11,
+        END_SYSEX,
     ]
     assert bytes(driver.written[: len(expected)]) == bytes(expected)
 
@@ -511,9 +546,16 @@ def test_parser_ignores_sysex_version_and_stray_bytes() -> None:
             [
                 0x00,  # stray data byte with no active command
                 0xFF,  # unsupported command byte (resets parser)
-                0xF9, 0x02, 0x05,  # REPORT_VERSION 2.5 (ignored)
-                0xF0, 0x79, 0x41, 0xF7,  # sysex payload (ignored)
-                DIGITAL_MESSAGE | 1, 0x01, 0x00,  # port 1, pin 8 high
+                0xF9,
+                0x02,
+                0x05,  # REPORT_VERSION 2.5 (ignored)
+                0xF0,
+                0x79,
+                0x41,
+                0xF7,  # sysex payload (ignored)
+                DIGITAL_MESSAGE | 1,
+                0x01,
+                0x00,  # port 1, pin 8 high
             ]
         )
     )

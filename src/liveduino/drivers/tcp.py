@@ -17,6 +17,7 @@ class TcpDriver(SocketDriver):
     Connects to the board's host and port and reuses the buffered, non-blocking
     socket I/O provided by ``SocketDriver``.
     """
+
     def __init__(self, host: str, port: int = 3030, *, timeout: float | None = None) -> None:
         super().__init__()
         self._host = host

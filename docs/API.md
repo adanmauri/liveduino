@@ -2,27 +2,27 @@
 
 Public board methods use **camelCase** to match Arduino/Wiring exactly.
 
-| Method | On hardware? | What it does |
-| --- | :---: | --- |
-| `pinMode(pin, mode)` | Yes | Set pin to `INPUT`, `OUTPUT`, or `INPUT_PULLUP` |
-| `digitalWrite(pin, value)` | Yes | Drive a digital pin `HIGH` / `LOW` |
-| `digitalRead(pin)` | Yes | Read a digital pin |
-| `analogRead(pin)` | Yes | Read an analog channel (`0`-`1023`) |
-| `analogWrite(pin, value)` | Yes | PWM duty cycle (`0`-`255`) on a PWM pin |
-| `servoWrite(pin, angle)` | Yes | Attach a servo and move it to an angle (`0`-`180`°) |
-| `servoConfig(pin, minPulse, maxPulse)` | Yes | Set a servo's min/max pulse width (µs) before writing |
-| `wire` | Yes | Arduino `Wire` I2C interface (`begin`, `beginTransmission`/`write`/`endTransmission`, `requestFrom`/`available`/`read`) |
-| `samplingInterval(ms)` | Yes | How often the board auto-reports analog / continuous I2C |
-| `readString()` | Yes | Latest text message from the board (e.g. an error), or `None` |
-| `serial(port)` | Yes | A serial-relay port (Arduino `Serial1`/`Serial2`/...) |
-| `reset()` | Yes | Reset the board's Firmata state (pins default, reporting off) |
-| `info()` | Yes | Firmware name/version + board identity (`BoardInfo`) |
-| `capabilities()` | Once | Per-pin supported modes; reads the firmware once and caches, else catalog (`Capabilities`) |
-| `pinState(pin)` | Yes | A pin's current mode and value (`PinState`) |
-| `status()` | Yes | Live snapshot of every pin (`BoardStatus`) |
-| `delay` / `delayMicroseconds` | Host | Block on the Python host |
-| `millis` / `micros` | Host | Elapsed time since the connection was created |
-| `tone` / `noTone` / `pulseIn` / `shiftOut` / `shiftIn` | n/a | Defined for fidelity; raise `UnsupportedOperationError` under StandardFirmata |
+| Method                                                 | On hardware? | What it does                                                                                                            |
+|--------------------------------------------------------|:------------:|-------------------------------------------------------------------------------------------------------------------------|
+| `pinMode(pin, mode)`                                   |     Yes      | Set pin to `INPUT`, `OUTPUT`, or `INPUT_PULLUP`                                                                         |
+| `digitalWrite(pin, value)`                             |     Yes      | Drive a digital pin `HIGH` / `LOW`                                                                                      |
+| `digitalRead(pin)`                                     |     Yes      | Read a digital pin                                                                                                      |
+| `analogRead(pin)`                                      |     Yes      | Read an analog channel (`0`-`1023`)                                                                                     |
+| `analogWrite(pin, value)`                              |     Yes      | PWM duty cycle (`0`-`255`) on a PWM pin                                                                                 |
+| `servoWrite(pin, angle)`                               |     Yes      | Attach a servo and move it to an angle (`0`-`180`°)                                                                     |
+| `servoConfig(pin, minPulse, maxPulse)`                 |     Yes      | Set a servo's min/max pulse width (µs) before writing                                                                   |
+| `wire`                                                 |     Yes      | Arduino `Wire` I2C interface (`begin`, `beginTransmission`/`write`/`endTransmission`, `requestFrom`/`available`/`read`) |
+| `samplingInterval(ms)`                                 |     Yes      | How often the board auto-reports analog / continuous I2C                                                                |
+| `readString()`                                         |     Yes      | Latest text message from the board (e.g. an error), or `None`                                                           |
+| `serial(port)`                                         |     Yes      | A serial-relay port (Arduino `Serial1`/`Serial2`/...)                                                                   |
+| `reset()`                                              |     Yes      | Reset the board's Firmata state (pins default, reporting off)                                                           |
+| `info()`                                               |     Yes      | Firmware name/version + board identity (`BoardInfo`)                                                                    |
+| `capabilities()`                                       |     Once     | Per-pin supported modes; reads the firmware once and caches, else catalog (`Capabilities`)                              |
+| `pinState(pin)`                                        |     Yes      | A pin's current mode and value (`PinState`)                                                                             |
+| `status()`                                             |     Yes      | Live snapshot of every pin (`BoardStatus`)                                                                              |
+| `delay` / `delayMicroseconds`                          |     Host     | Block on the Python host                                                                                                |
+| `millis` / `micros`                                    |     Host     | Elapsed time since the connection was created                                                                           |
+| `tone` / `noTone` / `pulseIn` / `shiftOut` / `shiftIn` |     n/a      | Defined for fidelity; raise `UnsupportedOperationError` under StandardFirmata                                           |
 
 Host-side timing runs on the Python process, mirroring the Arduino sketch API. The pure
 value helpers `map_range` and `constrain` are module-level functions
@@ -45,7 +45,7 @@ val = board.analogRead(A0)  # same as analogRead(0); returns 0-1023
 ## Servo
 
 StandardFirmata bundles the Arduino `Servo` library, so servos work with no extra setup.
-`servoWrite(pin, angle)` attaches the servo and moves it (0-180°); `servoConfig` customises
+`servoWrite(pin, angle)` attaches the servo and moves it (0-180°); `servoConfig` customizes
 the pulse-width range (µs) first if your servo needs it:
 
 ```python
@@ -58,7 +58,7 @@ Servo works on any digital pin (including `A0`-`A5`), not only PWM pins.
 
 ## I2C (`board.wire`)
 
-I2C is the Arduino `Wire` library, so liveduino exposes it as `board.wire` — the exact same
+I2C is the Arduino `Wire` library, so liveduino exposes it as `board.wire`, the exact same
 calls. A sketch ports almost verbatim; alias it once (`Wire = board.wire`, in place of
 `#include <Wire.h>`) and the rest is identical:
 
@@ -80,14 +80,14 @@ while Wire.available():
     values.append(Wire.read())
 ```
 
-| `Wire` method | Arduino | Notes |
-| --- | --- | --- |
-| `begin()` | `Wire.begin()` | Enable the bus |
-| `beginTransmission(a)` / `write(b)` / `endTransmission()` | same | Buffered write; `endTransmission` returns `0` |
-| `requestFrom(a, n)` | `Wire.requestFrom(a, n)` | Request `n` bytes; returns the count |
-| `requestFrom(a, n, register)` | `Wire.requestFrom(a, n, iaddress, ...)` | Register read in one transaction |
-| `requestFrom(a, n, sendStop=False)` | `Wire.requestFrom(..., false)` | Repeated start instead of stop |
-| `available()` / `read()` | same | `read()` returns the next byte, or `-1` |
+| `Wire` method                                             | Arduino                                 | Notes                                         |
+|-----------------------------------------------------------|-----------------------------------------|-----------------------------------------------|
+| `begin()`                                                 | `Wire.begin()`                          | Enable the bus                                |
+| `beginTransmission(a)` / `write(b)` / `endTransmission()` | same                                    | Buffered write; `endTransmission` returns `0` |
+| `requestFrom(a, n)`                                       | `Wire.requestFrom(a, n)`                | Request `n` bytes; returns the count          |
+| `requestFrom(a, n, register)`                             | `Wire.requestFrom(a, n, iaddress, ...)` | Register read in one transaction              |
+| `requestFrom(a, n, sendStop=False)`                       | `Wire.requestFrom(..., false)`          | Repeated start instead of stop                |
+| `available()` / `read()`                                  | same                                    | `read()` returns the next byte, or `-1`       |
 
 Addresses are 7-bit (`0`-`0x7F`), data bytes are `0`-`255`; 10-bit addressing is not
 supported (a StandardFirmata limit). `endTransmission(stop)` accepts the `stop` flag for
@@ -123,8 +123,8 @@ Modes are Arduino-style names (`'INPUT'`, `'OUTPUT'`, `'PWM'`, `'SERVO'`, `'ANAL
 `'I2C'`, `'PULLUP'`, ...), never raw protocol bytes.
 
 **`capabilities()` reads the board's real capabilities from the firmware the first time it
-can, then caches them** (they are never re-requested). Until the board can be queried — not
-connected yet, or the firmware doesn't answer — it falls back to the class/catalog
+can, then caches them** (they are never re-requested). Until the board can be queried (not
+connected yet, or the firmware doesn't answer), it falls back to the class/catalog
 definition as a bypass. Once cached, pin validation (digital / analog / PWM) follows the
 board's own answer:
 

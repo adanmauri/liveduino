@@ -18,6 +18,7 @@ class SerialDriver(Driver):
     Opens a serial port at the configured baud rate and exposes the ``Driver``
     interface, translating pyserial errors into ``BoardConnectionError``.
     """
+
     def __init__(self, port: str, *, baud: int = 57600, timeout: float | None = None) -> None:
         self._port = port
         self._baud = baud

@@ -19,6 +19,7 @@ class BluetoothDriver(SocketDriver):
     Uses the standard library's ``AF_BLUETOOTH`` RFCOMM sockets, available on
     Linux. No third-party Bluetooth dependency is required.
     """
+
     def __init__(self, address: str, channel: int = 1, *, timeout: float | None = None) -> None:
         super().__init__()
         self._address = address

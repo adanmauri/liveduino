@@ -31,14 +31,14 @@ liveduino-cli flash arduino:ethernet StandardFirmataEthernet --port /dev/ttyACM0
 liveduino-cli flash arduino:uno --port /dev/ttyACM0 --hex custom.hex
 ```
 
-| Argument / option | Default | Description |
-| --- | --- | --- |
-| `board` | (required) | Board id, e.g. `arduino:uno` |
-| `firmware` | board's primary | Bundled firmware name to flash (see `boards <board> firmwares`) |
-| `--port PORT` | (required) | Serial port, e.g. `/dev/ttyACM0` or `COM3` |
-| `--hex PATH` | bundled firmware | Intel HEX file to flash instead of a bundled image |
-| `--baud N` | board default | Override the bootloader baud rate |
-| `--no-verify` | off | Skip the read-back verification pass |
+| Argument / option | Default          | Description                                                     |
+|-------------------|------------------|-----------------------------------------------------------------|
+| `board`           | (required)       | Board id, e.g. `arduino:uno`                                    |
+| `firmware`        | board's primary  | Bundled firmware name to flash (see `boards <board> firmwares`) |
+| `--port PORT`     | (required)       | Serial port, e.g. `/dev/ttyACM0` or `COM3`                      |
+| `--hex PATH`      | bundled firmware | Intel HEX file to flash instead of a bundled image              |
+| `--baud N`        | board default    | Override the bootloader baud rate                               |
+| `--no-verify`     | off              | Skip the read-back verification pass                            |
 
 The board id selects the bundled firmware image and the bootloader settings (baud
 rate and flash page size). Flashing targets the ATmega328 family (UNO, Nano, Mini,
@@ -78,15 +78,15 @@ The Firmata family ships several firmware sketches. liveduino bundles and flashe
 liveduino's client speaks the base Firmata 2.x wire protocol, which all of these share for
 core I/O, so it can talk to any StandardFirmata build already on your board.
 
-| Firmware | Transport | Over StandardFirmata it adds | liveduino |
-| --- | --- | --- | --- |
-| **StandardFirmata** | Serial | digital/analog I/O, PWM, servo, I2C | ✅ default |
-| **StandardFirmataPlus** | Serial | serial-device (UART/SoftwareSerial) support | not bundled |
-| **StandardFirmataEthernet** | Ethernet (TCP) | network transport | ✅ bundled extra |
-| **StandardFirmataWiFi** | Wi-Fi (TCP) | network transport (needs `wifiConfig.h`) | not bundled |
-| **StandardFirmataBLE** | Bluetooth LE | BLE transport (needs config) | not bundled |
-| **ConfigurableFirmata** | Serial / net | modular features: DHT, stepper, I2C, SPI, encoder | not bundled |
+| Firmware                    | Transport      | Over StandardFirmata it adds                      | liveduino       |
+|-----------------------------|----------------|---------------------------------------------------|-----------------|
+| **StandardFirmata**         | Serial         | digital/analog I/O, PWM, servo, I2C               | ✅ default       |
+| **StandardFirmataPlus**     | Serial         | serial-device (UART/SoftwareSerial) support       | not bundled     |
+| **StandardFirmataEthernet** | Ethernet (TCP) | network transport                                 | ✅ bundled extra |
+| **StandardFirmataWiFi**     | Wi-Fi (TCP)    | network transport (needs `wifiConfig.h`)          | not bundled     |
+| **StandardFirmataBLE**      | Bluetooth LE   | BLE transport (needs config)                      | not bundled     |
+| **ConfigurableFirmata**     | Serial / net   | modular features: DHT, stepper, I2C, SPI, encoder | not bundled     |
 
 The richer variants (ConfigurableFirmata) add features that would need extra client support
-before liveduino can drive them. Note `tone`/`pulseIn`/`shift` are in **none** of these — the
+before liveduino can drive them. Note `tone`/`pulseIn`/`shift` are in **none** of these: the
 Firmata protocol does not define them (see [`ARCHITECTURE.md`](ARCHITECTURE.md#not-supported-tone--pulsein--shift)).

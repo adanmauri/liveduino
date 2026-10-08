@@ -22,6 +22,7 @@ class MockProtocol:
     Records every protocol call and keeps the latest pin modes and values in
     memory so board-level tests can assert on the commands the board issued.
     """
+
     def __init__(self) -> None:
         self.connected = False
         self.modes: dict[int, int] = {}
@@ -90,9 +91,7 @@ class MockProtocol:
         self.calls.append(("i2c_read", (address, count, register, restart)))
         return self.i2c_reply
 
-    def i2c_read_continuous(
-        self, address: int, count: int, register: int | None = None
-    ) -> None:
+    def i2c_read_continuous(self, address: int, count: int, register: int | None = None) -> None:
         self.calls.append(("i2c_read_continuous", (address, count, register)))
 
     def i2c_value(self, address: int, register: int | None = None) -> bytes | None:

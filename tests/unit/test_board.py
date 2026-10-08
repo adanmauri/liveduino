@@ -20,14 +20,14 @@ from liveduino.exceptions import (
     InvalidPinError,
     InvalidValueError,
 )
+from tests.shared.boards import connected_uno
 from tests.shared.fake_driver import FakeDriver
 from tests.shared.mock_protocol import MockProtocol
 
 
 @pytest.fixture
 def board() -> Board:
-    protocol = MockProtocol()
-    return ArduinoUno(protocol=lambda _driver: protocol).connect(driver=FakeDriver())
+    return connected_uno()
 
 
 @pytest.mark.unit

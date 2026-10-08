@@ -7,7 +7,9 @@ description: Create pull requests with consistent title/body, correct base branc
 
 ## Objective
 
-Open a clean, review-ready pull request from the current branch using a clear summary and test plan.
+Open a pull request from the current branch: validate state, push, and create
+the PR. The body content is produced by the `write-pr` skill: this skill owns
+the **mechanics**, not the prose.
 
 ## Workflow
 
@@ -20,46 +22,34 @@ Open a clean, review-ready pull request from the current branch using a clear su
 3. Ensure remote branch exists:
    - If needed: `git push -u origin HEAD`
 4. Draft PR title:
-   - Format: `<type>: <short outcome>`
+   - Format: `<type>(<scope>): <short outcome>`, e.g. `feat(boards): add the Arduino Mega profile`
    - Reuse commit intent when possible.
-5. Draft PR body with:
-   - `## Summary` (2-4 bullets)
-   - `## Test plan` (checklist)
-   - Optional risks/notes only when relevant
+5. Get the PR body from the **`write-pr`** skill (it fills the repo template into
+   `pr-body.tmp`). If `write-pr` has not been run, run it first, do not draft
+   the body here.
 6. Create PR:
-   - Preferred: GitHub MCP (`user-github`) to create PR and return URL.
-   - Fallback: `gh pr create --base main --head <branch> --title "<title>" --body "<body>"`
+   - Let `gh` apply the repo template automatically:
+     `gh pr create --base main --head <branch> --title "<title>"` (opens the
+     template to fill), or pass the filled template via `--body-file <file>`.
+   - Or a GitHub MCP server if one is connected.
 7. Report outcome:
    - PR URL
    - base/head branches
    - final title used
-
-## PR Content Rules
-
-- Explain user-facing impact first.
-- Keep bullets concrete and reviewable.
-- Avoid generic text like "misc fixes".
-- Include test commands actually run.
 
 ## Safety Rules
 
 - Never open PR from `main`.
 - Never force push unless explicitly requested.
 - Do not change git config.
-- Prefer MCP over `gh` for GitHub operations.
-- If neither MCP nor `gh` is authenticated, stop and ask user to authenticate.
+- If `gh` (or a GitHub MCP) is not authenticated, stop and ask the user to authenticate.
 
-## Body Template
+## Body
 
-```markdown
-## Summary
-- <change 1>
-- <change 2>
-
-## Test plan
-- [ ] <test command or scenario 1>
-- [ ] <test command or scenario 2>
-```
+The PR body comes from the `write-pr` skill, which fills the repo template
+([`.github/PULL_REQUEST_TEMPLATE.md`](../../../.github/PULL_REQUEST_TEMPLATE.md))
+into `pr-body.tmp`. `gh pr create` also applies that template automatically when
+no body is passed.
 
 ## Command Template
 
@@ -68,5 +58,8 @@ git status --short --branch
 git log --oneline origin/main...HEAD
 git diff --stat origin/main...HEAD
 git push -u origin HEAD
-gh pr create --base main --head <branch> --title "<title>" --body "<body>"
+# Applies .github/PULL_REQUEST_TEMPLATE.md automatically:
+gh pr create --base main --head <branch> --title "<title>"
+# Or, with a pre-filled body file based on that template:
+gh pr create --base main --head <branch> --title "<title>" --body-file pr-body.tmp
 ```

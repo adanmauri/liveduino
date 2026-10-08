@@ -23,11 +23,11 @@ Override the protocol at instantiation for a board flashed with different firmwa
 
 ## Drivers
 
-| Driver | Channel | Notes |
-| --- | --- | --- |
-| `SerialDriver` | USB/UART serial | Default; built by `connect(port)` (pyserial) |
-| `TcpDriver` | TCP (Wi-Fi/Ethernet) | For StandardFirmataWiFi/Ethernet; `TcpDriver(host, port)` |
-| `BluetoothDriver` | Bluetooth RFCOMM | Linux `AF_BLUETOOTH` sockets (stdlib), e.g. HC-05/HC-06 |
+| Driver            | Channel              | Notes                                                     |
+|-------------------|----------------------|-----------------------------------------------------------|
+| `SerialDriver`    | USB/UART serial      | Default; built by `connect(port)` (pyserial)              |
+| `TcpDriver`       | TCP (Wi-Fi/Ethernet) | For StandardFirmataWiFi/Ethernet; `TcpDriver(host, port)` |
+| `BluetoothDriver` | Bluetooth RFCOMM     | Linux `AF_BLUETOOTH` sockets (stdlib), e.g. HC-05/HC-06   |
 
 `TcpDriver` and `BluetoothDriver` share a `SocketDriver` base that buffers non-blocking
 socket reads so the synchronous Firmata pump works the same as over serial. See

@@ -53,5 +53,10 @@ bandit-report.txt
 *.bak
 *.tmp
 
-### Agent worktrees ###
+### Agents ###
+# Personal settings, worktrees and scratch files (pr-body.tmp, issue-draft.tmp: matched by *.tmp)
+.claude/settings.local.json
 .claude/worktrees/
+
+### CI ###
+megalinter-reports/

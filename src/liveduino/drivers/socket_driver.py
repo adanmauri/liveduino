@@ -21,6 +21,7 @@ class SocketDriver:
     delegates the actual socket creation and a human-readable description to
     subclasses via ``_open_socket`` and ``_describe``.
     """
+
     def __init__(self) -> None:
         self._socket: socket.socket | None = None
         self._buffer = bytearray()

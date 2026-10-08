@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from liveduino.boards.board import Board
@@ -87,34 +88,72 @@ def _skip_reason(stderr: str) -> str:
     return "firmware does not compile (missing library or configuration)"
 
 
+@dataclass
+class _BuildContext:
+    """Toolchain paths shared by every compilation, plus the bundle being collected.
+
+    One context covers a whole run: the arduino-cli executable, the installed Firmata
+    examples, a scratch directory for compiler output, and the manifest sections
+    (primary images, extra variants, and skipped builds) filled as boards compile.
+    """
+
+    cli: str
+    examples: Path
+    tmp_root: Path
+    boards: dict[str, dict[str, str]] = field(default_factory=dict)
+    extras: dict[str, dict[str, str]] = field(default_factory=dict)
+    unsupported: dict[str, str] = field(default_factory=dict)
+
+
 def _build(
-    cli: str,
-    examples: Path,
-    board: Board,
-    sketch_name: str,
-    tmp_root: Path,
-    unsupported: dict[str, str],
-    *,
-    required: bool,
+    ctx: _BuildContext, board: type[Board], fqbn: str, sketch_name: str, *, required: bool
 ) -> bytes | None:
     """
     Compile one sketch for a board and return its hex bytes, or None if it was
     skipped. A failing primary (required) firmware aborts only when the error is
     not the expected does-not-fit case; extra (optional) firmwares never abort.
     """
-    sketch = _sketch_dir(examples, sketch_name)
-    model = board.fqbn.split(":")[-1]
+    sketch = _sketch_dir(ctx.examples, sketch_name)
+    model = fqbn.split(":")[-1]
     filename = f"{sketch_name.lower()}-{model}.hex"
-    print(f"Compiling {board.name} - {sketch_name} ({board.fqbn}) -> {filename}")
+    print(f"Compiling {board.name} - {sketch_name} ({fqbn}) -> {filename}")
     try:
-        return _compile(cli, sketch, sketch_name, board.fqbn, tmp_root / filename)
+        return _compile(ctx.cli, sketch, sketch_name, fqbn, ctx.tmp_root / filename)
     except subprocess.CalledProcessError as exc:
         reason = _skip_reason(exc.stderr or "")
         if required and reason != "firmware does not fit on this board":
             raise
         print(f"  skipped {board.name} {sketch_name}: {reason}")
-        unsupported[f"{board.id} ({sketch_name})"] = reason
+        ctx.unsupported[f"{board.id} ({sketch_name})"] = reason
         return None
+
+
+def _bundle_board(ctx: _BuildContext, board_id: str, board: type[Board], fqbn: str) -> None:
+    """Compile a board's primary and extra firmware into the bundle directory."""
+    model = fqbn.split(":")[-1]
+    hex_bytes = _build(ctx, board, fqbn, board.firmware_sketch, required=True)
+    if hex_bytes is not None:
+        filename = f"{board.firmware_sketch.lower()}-{model}.hex"
+        (_FIRMWARE_DIR / filename).write_bytes(hex_bytes)
+        ctx.boards[board_id] = {
+            "file": filename,
+            "sha256": hashlib.sha256(hex_bytes).hexdigest(),
+            "fqbn": fqbn,
+            "sketch": board.firmware_sketch,
+        }
+
+    for sketch_name in board.firmware_sketches:
+        hex_bytes = _build(ctx, board, fqbn, sketch_name, required=False)
+        if hex_bytes is None:
+            continue
+        filename = f"{sketch_name.lower()}-{model}.hex"
+        (_FIRMWARE_DIR / filename).write_bytes(hex_bytes)
+        ctx.extras[filename] = {
+            "board": board_id,
+            "sketch": sketch_name,
+            "fqbn": fqbn,
+            "sha256": hashlib.sha256(hex_bytes).hexdigest(),
+        }
 
 
 def main() -> int:
@@ -127,44 +166,13 @@ def main() -> int:
     for stale in _FIRMWARE_DIR.glob("*.hex"):
         stale.unlink()
 
-    boards: dict[str, dict[str, str]] = {}
-    extras: dict[str, dict[str, str]] = {}
-    unsupported: dict[str, str] = {}
     with tempfile.TemporaryDirectory() as tmp:
-        tmp_root = Path(tmp)
+        ctx = _BuildContext(cli=cli, examples=examples, tmp_root=Path(tmp))
         for board_id, board in sorted(available_boards().items()):
-            if board.fqbn is None:
-                continue
-            model = board.fqbn.split(":")[-1]
+            if board.fqbn is not None:
+                _bundle_board(ctx, board_id, board, board.fqbn)
 
-            hex_bytes = _build(
-                cli, examples, board, board.firmware_sketch, tmp_root, unsupported, required=True
-            )
-            if hex_bytes is not None:
-                filename = f"{board.firmware_sketch.lower()}-{model}.hex"
-                (_FIRMWARE_DIR / filename).write_bytes(hex_bytes)
-                boards[board_id] = {
-                    "file": filename,
-                    "sha256": hashlib.sha256(hex_bytes).hexdigest(),
-                    "fqbn": board.fqbn,
-                    "sketch": board.firmware_sketch,
-                }
-
-            for sketch_name in board.firmware_sketches:
-                hex_bytes = _build(
-                    cli, examples, board, sketch_name, tmp_root, unsupported, required=False
-                )
-                if hex_bytes is None:
-                    continue
-                filename = f"{sketch_name.lower()}-{model}.hex"
-                (_FIRMWARE_DIR / filename).write_bytes(hex_bytes)
-                extras[filename] = {
-                    "board": board_id,
-                    "sketch": sketch_name,
-                    "fqbn": board.fqbn,
-                    "sha256": hashlib.sha256(hex_bytes).hexdigest(),
-                }
-
+    boards, extras, unsupported = ctx.boards, ctx.extras, ctx.unsupported
     if not boards:
         sys.exit("No firmware could be built; check the arduino-cli setup")
 

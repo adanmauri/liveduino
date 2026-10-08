@@ -5,28 +5,19 @@ from __future__ import annotations
 import pytest
 
 from liveduino.boards.board import Board
-from liveduino.boards.catalog.arduino_uno import ArduinoUno
 from liveduino.exceptions import LiveduinoError
-from tests.shared.fake_driver import FakeDriver
-from tests.shared.mock_protocol import MockProtocol
+from tests.shared.boards import connected_uno, mock_protocol_of
 
 
 @pytest.fixture
 def board() -> Board:
-    protocol = MockProtocol()
-    return ArduinoUno(protocol=lambda _driver: protocol).connect(driver=FakeDriver())
-
-
-def _protocol(board: Board) -> MockProtocol:
-    protocol = board._protocol
-    assert isinstance(protocol, MockProtocol)
-    return protocol
+    return connected_uno()
 
 
 @pytest.mark.unit
 def test_begin_enables_bus(board: Board) -> None:
     board.wire.begin()
-    assert ("i2c_config", (0,)) in _protocol(board).calls
+    assert ("i2c_config", (0,)) in mock_protocol_of(board).calls
 
 
 @pytest.mark.unit
@@ -35,7 +26,7 @@ def test_write_and_end_transmission(board: Board) -> None:
     board.wire.write(0x6B)
     board.wire.write([0x00, 0x01])
     assert board.wire.endTransmission() == 0
-    assert ("i2c_write", (0x68, (0x6B, 0x00, 0x01))) in _protocol(board).calls
+    assert ("i2c_write", (0x68, (0x6B, 0x00, 0x01))) in mock_protocol_of(board).calls
 
 
 @pytest.mark.unit
@@ -53,7 +44,7 @@ def test_end_transmission_without_begin_raises(board: Board) -> None:
 
 @pytest.mark.unit
 def test_request_from_and_read(board: Board) -> None:
-    _protocol(board).i2c_reply = bytes([0xDE, 0xAD])
+    mock_protocol_of(board).i2c_reply = bytes([0xDE, 0xAD])
     assert board.wire.requestFrom(0x68, 2) == 2
     assert board.wire.available() == 2
     assert board.wire.read() == 0xDE
@@ -64,21 +55,21 @@ def test_request_from_and_read(board: Board) -> None:
 
 @pytest.mark.unit
 def test_request_from_register(board: Board) -> None:
-    _protocol(board).i2c_reply = bytes([0x11])
+    mock_protocol_of(board).i2c_reply = bytes([0x11])
     assert board.wire.requestFrom(0x68, 1, register=0x3B) == 1
-    assert ("i2c_read", (0x68, 1, 0x3B, False)) in _protocol(board).calls
+    assert ("i2c_read", (0x68, 1, 0x3B, False)) in mock_protocol_of(board).calls
 
 
 @pytest.mark.unit
 def test_request_from_repeated_start(board: Board) -> None:
-    _protocol(board).i2c_reply = bytes([0x01])
+    mock_protocol_of(board).i2c_reply = bytes([0x01])
     board.wire.requestFrom(0x68, 1, sendStop=False)
-    assert ("i2c_read", (0x68, 1, None, True)) in _protocol(board).calls
+    assert ("i2c_read", (0x68, 1, None, True)) in mock_protocol_of(board).calls
 
 
 @pytest.mark.unit
 def test_continuous_read_value_and_stop(board: Board) -> None:
-    protocol = _protocol(board)
+    protocol = mock_protocol_of(board)
     protocol.i2c_latest = bytes([0xAB, 0xCD])
     board.wire.readContinuous(0x68, 6, register=0x3B)
     assert board.wire.value(0x68, register=0x3B) == bytes([0xAB, 0xCD])

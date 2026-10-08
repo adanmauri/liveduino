@@ -2,9 +2,12 @@
 
 Liveduino is a layered Python library that exposes the Arduino/Wiring API while delegating driver (channel) and protocol details to pluggable backends.
 
+How it works inside. What it does and how to use it are in the [README](../README.md); setup,
+commands and releases in [DEVELOPMENT.md](DEVELOPMENT.md); what checks a change in [CI.md](CI.md).
+
 ## Layers
 
-```
+```text
 User API (Board subclass: ArduinoUno.pinMode, digitalWrite, …)
     → ProtocolClient (FirmataProtocol, future LiveProtocol)
     → Driver (SerialDriver, TcpDriver, BluetoothDriver, …)
@@ -27,26 +30,28 @@ driver.
 
 ## Packages
 
-| Path | Role |
-|------|------|
-| `src/liveduino/constants.py` | Arduino constants (`HIGH`, `LOW`, `INPUT`, …, and analog pins `A0`-`A20`) |
-| `src/liveduino/types.py` | Arduino value types (`PinMode`, `DigitalValue`, `BitOrder`) |
-| `src/liveduino/utilities.py` | Host value utilities (`map_range`, `constrain`) |
-| `src/liveduino/discovery.py` | Discovery value types (`BoardInfo`, `PinState`, `Capabilities`, `BoardStatus`) |
-| `src/liveduino/i2c.py` | Arduino `Wire`-style I2C layer (`board.wire`) |
-| `src/liveduino/serial_relay.py` | Arduino `HardwareSerial`-style serial-relay port (`board.serial`) |
-| `src/liveduino/boards/board.py` | `Board` abstract base class (Arduino API incl. host timing, pin map, capabilities, `connect`) |
-| `src/liveduino/boards/catalog/` | One `Board` subclass per board (e.g. `ArduinoUno`), auto-discovered |
-| `src/liveduino/boards/registry.py` | Auto-discovery + lookup (`get_board`, `available_boards`) |
-| `src/liveduino/protocols/` | Protocol clients (native `FirmataProtocol` today; `LiveProtocol` for Pinguino later) |
-| `src/liveduino/drivers/` | Byte channels: `SerialDriver`, `TcpDriver`, `BluetoothDriver` (shared `SocketDriver` base) |
-| `src/liveduino/connection.py` | Factory `connect("arduino:uno", port)` |
-| `firmware/` | Setup docs and future MCU firmware (Pinguino live interpreter) |
-| [github.com/adanmauri/frameduino](https://github.com/adanmauri/frameduino) | Original Frameduino 0.x Python 2 code and Pinguino `.pde` |
+| Path                                                                       | Role                                                                                          |
+|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `src/liveduino/constants.py`                                               | Arduino constants (`HIGH`, `LOW`, `INPUT`, …, and analog pins `A0`-`A20`)                     |
+| `src/liveduino/types.py`                                                   | Arduino value types (`PinMode`, `DigitalValue`, `BitOrder`)                                   |
+| `src/liveduino/utilities.py`                                               | Host value utilities (`map_range`, `constrain`)                                               |
+| `src/liveduino/discovery.py`                                               | Discovery value types (`BoardInfo`, `PinState`, `Capabilities`, `BoardStatus`)                |
+| `src/liveduino/i2c.py`                                                     | Arduino `Wire`-style I2C layer (`board.wire`)                                                 |
+| `src/liveduino/serial_relay.py`                                            | Arduino `HardwareSerial`-style serial-relay port (`board.serial`)                             |
+| `src/liveduino/boards/board.py`                                            | `Board` abstract base class (Arduino API incl. host timing, pin map, capabilities, `connect`) |
+| `src/liveduino/boards/catalog/`                                            | One `Board` subclass per board (e.g. `ArduinoUno`), auto-discovered                           |
+| `src/liveduino/boards/registry.py`                                         | Auto-discovery + lookup (`get_board`, `available_boards`)                                     |
+| `src/liveduino/protocols/`                                                 | Protocol clients (native `FirmataProtocol` today; `LiveProtocol` for Pinguino later)          |
+| `src/liveduino/drivers/`                                                   | Byte channels: `SerialDriver`, `TcpDriver`, `BluetoothDriver` (shared `SocketDriver` base)    |
+| `src/liveduino/connection.py`                                              | Factory `connect("arduino:uno", port)`                                                        |
+| `firmware/`                                                                | Setup docs and future MCU firmware (Pinguino live interpreter)                                |
+| [github.com/adanmauri/frameduino](https://github.com/adanmauri/frameduino) | Original Frameduino 0.x Python 2 code and Pinguino `.pde`                                     |
 
 ## Data flow (Arduino UNO)
 
-1. `ArduinoUno()` picks the board's protocol (`FirmataProtocol` by default; override at instantiation with `ArduinoUno(protocol=...)`). `.connect(port)` then builds a `SerialDriver(port)` (or uses the `driver=TcpDriver(...)` / `driver=BluetoothDriver(...)` you pass), wraps it in the chosen protocol, and opens the connection. The **protocol** is a property of the board instance; the **driver** is how it is connected.
+1. `ArduinoUno()` picks the board's protocol (`FirmataProtocol` by default; override at instantiation with `ArduinoUno(protocol=...)`).
+   `.connect(port)` then builds a `SerialDriver(port)` (or uses the `driver=TcpDriver(...)` / `driver=BluetoothDriver(...)` you pass), wraps it in the chosen protocol, and opens the connection.
+   The **protocol** is a property of the board instance; the **driver** is how it is connected.
 2. `board.pinMode(13, OUTPUT)` validates pin 13 against the `ArduinoUno` pin map, then calls `protocol.pin_mode`.
 3. `FirmataProtocol` encodes a `SET_PIN_MODE` Firmata message and writes the bytes to the driver. Inbound digital/analog reports are decoded by a small synchronous parser pumped on each read.
 4. StandardFirmata on the UNO executes the command on the hardware.
@@ -92,23 +97,23 @@ for validation; until the board is reachable it falls back to the catalog.
 ## Not supported: tone / pulseIn / shift
 
 `tone`, `noTone`, `pulseIn`, `shiftOut`, and `shiftIn` exist on `Board` for API
-fidelity, but **the Firmata protocol does not define them** — they are absent from
-StandardFirmata *and* StandardFirmataPlus — so `FirmataProtocol` raises
+fidelity, but **the Firmata protocol does not define them**: they are absent from
+StandardFirmata *and* StandardFirmataPlus, so `FirmataProtocol` raises
 `UnsupportedOperationError`.
 
 **Roadmap (TODO):** supporting them is not a matter of bundling a "Plus" image; it
-needs custom firmware — a StandardFirmata (or ConfigurableFirmata) build with a
+needs custom firmware: a StandardFirmata (or ConfigurableFirmata) build with a
 bespoke sysex for each function, plus the matching sysex on the client. A future
 `LiveProtocol` (or that custom firmware) can implement them without changing the
 public API.
 
 ## Drivers
 
-| Driver | Channel | Notes |
-|--------|---------|-------|
-| `SerialDriver` | USB/UART serial | Default; built by `connect(port)` (pyserial) |
-| `TcpDriver` | TCP (WiFi/Ethernet) | For StandardFirmataWiFi/Ethernet; `TcpDriver(host, port)` |
-| `BluetoothDriver` | Bluetooth RFCOMM | Linux `AF_BLUETOOTH` sockets (stdlib), e.g. HC-05/HC-06 |
+| Driver            | Channel             | Notes                                                     |
+|-------------------|---------------------|-----------------------------------------------------------|
+| `SerialDriver`    | USB/UART serial     | Default; built by `connect(port)` (pyserial)              |
+| `TcpDriver`       | TCP (WiFi/Ethernet) | For StandardFirmataWiFi/Ethernet; `TcpDriver(host, port)` |
+| `BluetoothDriver` | Bluetooth RFCOMM    | Linux `AF_BLUETOOTH` sockets (stdlib), e.g. HC-05/HC-06   |
 
 `TcpDriver` and `BluetoothDriver` share a `SocketDriver` base that buffers non-blocking socket reads so the synchronous Firmata pump works the same as over serial.
 

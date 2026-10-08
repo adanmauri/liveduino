@@ -14,6 +14,7 @@ class ArduinoEthernet(Board):
     on pins 3, 5, 6, 9, 10, and 11, and pins 10-13 are reserved for the onboard
     Ethernet controller.
     """
+
     id = "arduino:ethernet"
     fqbn = "arduino:avr:ethernet"
     firmware_sketches = ("StandardFirmataEthernet",)

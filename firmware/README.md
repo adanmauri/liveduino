@@ -15,8 +15,8 @@ firmware` (see [`docs/DEVELOPMENT.md`](../docs/DEVELOPMENT.md)).
 
 ## Guides
 
-| Guide | Contents |
-| --- | --- |
+| Guide                                    | Contents                                                                                                                                    |
+|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | [`arduino/README.md`](arduino/README.md) | Arduino UNO and compatibles: flash from the CLI or the Arduino IDE, serial settings, Wi-Fi / Ethernet / Bluetooth variants, troubleshooting |
 
 ## See also

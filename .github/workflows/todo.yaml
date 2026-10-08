@@ -1,32 +1,33 @@
 ---
-name: Todo Checker
+name: TODO & FIXME Tracker
 
-on: # yamllint disable-line rule:truthy
+on:
   workflow_dispatch:
   push:
     branches:
       - main
 
+permissions: {}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  issues: write
-
 jobs:
   todo:
-    name: Check TODOs
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: TODO to Issue
-        uses: alstr/todo-to-issue-action@v5
-        id: todo
+      - name: Create issues from TODOs
+        uses: alstr/todo-to-issue-action@37bb7b56e58569ef273b60678048030a7f0c261a # v5.1.15
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

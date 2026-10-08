@@ -1,7 +1,7 @@
 ---
 name: Firmware
 
-on: # yamllint disable-line rule:truthy
+on:
   workflow_dispatch:
   push:
     branches:
@@ -21,11 +21,10 @@ on: # yamllint disable-line rule:truthy
       - .github/workflows/firmware.yaml
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   verify:
@@ -34,29 +33,32 @@ jobs:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup uv (with cache)
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
-          python-version: "3.13"
           enable-cache: true
-          cache-dependency-glob: |
-            uv.lock
-            pyproject.toml
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --locked --no-default-groups
 
       - name: Setup arduino-cli
-        uses: arduino/setup-arduino-cli@v2
+        uses: arduino/setup-arduino-cli@81d310742121c928ea9c8bbd407b4217b432ae02 # v2.0.0
 
       - name: Install pinned Arduino core and libraries
         run: make firmware-setup
 
       - name: Build firmware
+        env:
+          # Keep the runtime-only environment installed above.
+          UV_NO_SYNC: "1"
         run: make firmware
 
       - name: Fail if bundled firmware changed
@@ -77,31 +79,32 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup uv (with cache)
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
-          python-version: "3.13"
           enable-cache: true
-          cache-dependency-glob: |
-            uv.lock
-            pyproject.toml
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --locked --no-default-groups
 
       - name: Setup arduino-cli
-        uses: arduino/setup-arduino-cli@v2
+        uses: arduino/setup-arduino-cli@81d310742121c928ea9c8bbd407b4217b432ae02 # v2.0.0
 
       - name: Install pinned Arduino core and libraries
         run: make firmware-setup
 
       - name: Build firmware
+        env:
+          # Keep the runtime-only environment installed above.
+          UV_NO_SYNC: "1"
         run: make firmware
 
       - name: Open pull request with updated firmware
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           branch: firmware/rebuild
           title: "chore(firmware): rebuild bundled StandardFirmata images"

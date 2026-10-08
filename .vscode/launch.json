@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "liveduino-cli boards",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "liveduino.cli",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": ["boards"]
+    },
+    {
+      "name": "liveduino-cli (custom args)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "liveduino.cli",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": "${command:pickArgs}"
+    },
+    {
+      "name": "Current file",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

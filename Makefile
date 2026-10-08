@@ -15,107 +15,65 @@ LIVEDUINO_PORT ?=
 ARDUINO_CORE      ?= arduino:avr@1.8.8
 ARDUINO_LIBRARIES ?= Firmata@2.5.9 Servo@1.3.0 Ethernet@2.0.2
 
-# Green OK / cyan section titles.
+# Green OK.
 define ECHO_OK
 	@printf '\033[32m%s\033[0m\n' "$(1)"
 endef
-define ECHO_TITLE
-	@printf '\033[36m%s\033[0m\n' "$(1)"
-endef
 
-.PHONY: help install install-dev clean clean-cache clean-deps \
+PRE_COMMIT := uvx pre-commit@4.6.1
+
+.DEFAULT_GOAL := help
+.PHONY: help install setup clean clean-cache clean-deps \
 	test test-unit test-integration test-coverage \
-	lint type-check security quality format format-quality check pre-commit build firmware firmware-setup \
-	actions \
+	lint type-check security format check build firmware firmware-setup \
+	sync-agents check-agents actions \
 	src tests docs
 
-# Default target
-help:
-	@echo ""
-	$(call ECHO_TITLE,Liveduino - Development Commands)
-	@echo "======================================"
-	@echo ""
-	$(call ECHO_TITLE,[ENV] Environment & Dependencies:)
-	@echo "  install                 - Install production dependencies only"
-	@echo "  install-dev             - Install all dependencies (incl. dev) + pre-commit hooks"
-	@echo "  clean-cache             - Remove build artifacts and caches (keeps .venv)"
-	@echo "  clean-deps              - Remove .venv and clear uv cache"
-	@echo "  clean                   - clean-cache + clean-deps"
-	@echo ""
-	$(call ECHO_TITLE,[BUILD] Package:)
-	@echo "  build                   - Build wheel with uv"
-	@echo "  firmware-setup          - Install pinned arduino-cli core + libraries"
-	@echo "  firmware                - Rebuild bundled StandardFirmata hex (needs firmware-setup)"
-	@echo ""
-	$(call ECHO_TITLE,[CI] GitHub Actions:)
-	@echo "  actions ls              - List the workflows you can trigger"
-	@echo "  actions workflow-<name> - Trigger a workflow (e.g. actions workflow-tests)"
-	@echo "                            add branch-<branch> to pick a branch (default: current)"
-	@echo "                            e.g. actions workflow-tests branch-main"
-	@echo ""
-	$(call ECHO_TITLE,[TEST] Testing:)
-	@echo "  test                    - Run all tests (unit + integration)"
-	@echo "  test-unit               - Run unit tests only"
-	@echo "  test-integration        - Run integration tests (requires LIVEDUINO_PORT)"
-	@echo "  test-coverage           - Unit tests with coverage (100% gate on liveduino)"
-	@echo ""
-	@echo "  Usage:          make test COVERAGE=1   ARGS=\"...\" for pytest"
-	@echo "  Examples:       make test-unit COVERAGE=1"
-	@echo "                  LIVEDUINO_PORT=/dev/ttyACM0 make test-integration"
-	@echo ""
-	$(call ECHO_TITLE,[QUALITY] Code Quality:)
-	@echo "  lint                    - ruff, flake8, pylint"
-	@echo "  type-check              - mypy, pyright"
-	@echo "  security                - bandit"
-	@echo "  quality                 - lint + type-check + security"
-	@echo "  format                  - black, isort, ruff --fix"
-	@echo "  format-quality          - format then quality"
-	@echo "  check                   - lint + type-check + test-coverage (pre-finish gate)"
-	@echo "  pre-commit              - run all pre-commit hooks on the repo"
-	@echo ""
-	@echo "  Usage:          make <target> [path] or DIR=path (default: src tests)"
-	@echo "  Examples:       make lint src   make type-check tests"
-	@echo ""
+##@ General
 
-# --- Environment & dependencies ---
+help: ## Show this help
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} \
+		/^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 } \
+		/^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) }' $(MAKEFILE_LIST)
 
-install:
+##@ Environment
+
+install: ## Install the runtime dependencies only
 	@echo "INFO: Installing production dependencies with UV..."
-	@uv sync --no-group dev || (echo "ERROR: Failed to install dependencies" && exit 1)
+	@uv sync --locked --no-default-groups || (echo "ERROR: Failed to install dependencies" && exit 1)
 	$(call ECHO_OK,OK: Installation complete.)
 
-install-dev:
-	@echo "INFO: Installing all dependencies (production + development) with UV..."
-	@uv sync --group dev || (echo "ERROR: Failed to install development dependencies" && exit 1)
-	@echo "INFO: Installing pre-commit hooks (commit + pre-push)..."
-	@uv run pre-commit install
-	@uv run pre-commit install --hook-type pre-push
-	@$(MAKE) --no-print-directory firmware-setup
-	$(call ECHO_OK,OK: Installation complete.)
+# pre-commit installs the Node.js and Go runtimes some hooks need, so the first run takes a while.
+setup: ## Install the dev environment and the git hooks (pre-commit, commit-msg)
+	@echo "INFO: Installing all dependencies (production + dev group) with UV..."
+	@uv sync --locked || (echo "ERROR: Failed to install development dependencies" && exit 1)
+	@echo "INFO: Installing git hooks (pre-commit, commit-msg)..."
+	@$(PRE_COMMIT) install --install-hooks || (echo "ERROR: Failed to install git hooks" && exit 1)
+	$(call ECHO_OK,OK: Setup complete. Run make firmware-setup too if you work on firmware.)
 
-clean-cache:
+clean-cache: ## Remove build artifacts and caches (keeps .venv)
 	@echo "INFO: Removing build artifacts and caches..."
 	@find . -type d -name '__pycache__' -prune -exec rm -rf {} + 2>/dev/null || true
 	@rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage coverage.xml dist
 	$(call ECHO_OK,OK: Build artifacts and caches removed.)
 
-clean-deps:
+clean-deps: ## Remove .venv and clear the uv cache
 	@echo "INFO: Removing .venv and clearing uv cache..."
 	@rm -rf .venv
 	@-uv cache clean
 	$(call ECHO_OK,OK: Dependencies cleaned.)
 
-clean: clean-cache clean-deps
-	$(call ECHO_OK,OK: Environment at zero. Run make install-dev to reinstall.)
+clean: clean-cache clean-deps ## clean-cache + clean-deps
+	$(call ECHO_OK,OK: Environment at zero. Run make setup to reinstall.)
 
-# --- Build ---
+##@ Build
 
-build:
+build: ## Build the sdist and wheel with uv
 	@echo "INFO: Building liveduino wheel..."
 	@uv build || (echo "ERROR: Build failed" && exit 1)
 	$(call ECHO_OK,OK: Build complete.)
 
-firmware-setup:
+firmware-setup: ## Install the pinned arduino-cli core and libraries
 	@echo "INFO: Setting up Arduino firmware toolchain..."
 	@command -v arduino-cli >/dev/null 2>&1 || { \
 		echo "INFO: arduino-cli not found on PATH; attempting to install it..."; \
@@ -133,85 +91,80 @@ firmware-setup:
 	@arduino-cli lib install $(ARDUINO_LIBRARIES)
 	$(call ECHO_OK,OK: Firmware toolchain ready.)
 
-firmware:
+firmware: ## Rebuild the bundled StandardFirmata images (needs firmware-setup)
 	@echo "INFO: Building bundled StandardFirmata firmware (arduino-cli)..."
 	@uv run python scripts/build_firmware.py || (echo "ERROR: Firmware build failed" && exit 1)
 	$(call ECHO_OK,OK: Firmware built.)
 
-# --- Testing ---
+##@ Testing
 
-_pytest_cov_opts = --cov=liveduino --cov-report=html --cov-report=term-missing
+_pytest_cov_opts = --cov=liveduino --cov-report=html --cov-report=xml --cov-report=term-missing
 _cov_flags = $(if $(COVERAGE),$(_pytest_cov_opts),)
 _test_goals := test test-unit test-integration test-coverage
 
-test-unit:
+test-unit: ## Unit tests (COVERAGE=1 adds coverage, ARGS="..." goes to pytest)
 	@echo "INFO: Running unit tests..."
 	@uv run pytest $(_cov_flags) -m "unit and not integration and not slow" $(or $(ARGS),$(filter-out $(_test_goals),$(MAKECMDGOALS))) || (echo "ERROR: Unit tests failed" && exit 1)
 	$(call ECHO_OK,OK: All unit tests passed.)
 
-test-integration:
-	@test -n "$(LIVEDUINO_PORT)" || (echo "ERROR: LIVEDUINO_PORT is required, e.g. LIVEDUINO_PORT=/dev/ttyACM0 make test-integration" && exit 1)
-	@echo "INFO: Running integration tests on $(LIVEDUINO_PORT)..."
+test-integration: ## Integration tests on a board (LIVEDUINO_PORT or LIVEDUINO_FLASH_PORT)
+	@test -n "$(LIVEDUINO_PORT)$(LIVEDUINO_FLASH_PORT)" || (echo "ERROR: LIVEDUINO_PORT (or LIVEDUINO_FLASH_PORT) is required, e.g. LIVEDUINO_PORT=/dev/ttyACM0 make test-integration" && exit 1)
+	@echo "INFO: Running integration tests on $(or $(LIVEDUINO_PORT),$(LIVEDUINO_FLASH_PORT))..."
 	@LIVEDUINO_PORT=$(LIVEDUINO_PORT) uv run pytest $(_cov_flags) -m integration $(or $(ARGS),$(filter-out $(_test_goals),$(MAKECMDGOALS))) || (echo "ERROR: Integration tests failed" && exit 1)
 	$(call ECHO_OK,OK: All integration tests passed.)
 
-test:
+test: ## Every test, unit and integration (COVERAGE=1, ARGS="...")
 	@echo "INFO: Running all tests..."
 	@uv run pytest $(_cov_flags) $(or $(ARGS),$(filter-out $(_test_goals),$(MAKECMDGOALS))) || (echo "ERROR: Tests failed" && exit 1)
 	$(call ECHO_OK,OK: All tests passed.)
 
-test-coverage:
+test-coverage: ## Unit tests with the 100% coverage gate
 	@echo "INFO: Running unit tests with coverage..."
 	@uv run pytest $(_pytest_cov_opts) --cov-fail-under=100 -m "unit and not integration and not slow" $(or $(ARGS),$(filter-out $(_test_goals),$(MAKECMDGOALS))) || (echo "ERROR: Tests failed" && exit 1)
 	$(call ECHO_OK,OK: All tests passed.)
 
-# --- Code quality ---
+##@ Code quality
 
-lint:
-	@echo "INFO: Running linters (ruff, flake8, pylint)..."
-	@uv run ruff check $(_qual_dir) || (echo "ERROR: Ruff check failed" && exit 1)
-	@uv run flake8 $(_qual_dir) || (echo "ERROR: Flake8 check failed" && exit 1)
-	@uv run pylint $(_qual_dir) || (echo "ERROR: Pylint check failed" && exit 1)
+# The full linter set lives in .pre-commit-config.yaml (docs/CI.md); type-check, security and
+# format run single tools directly for a quick loop on a path.
+lint: ## Every hook in .pre-commit-config.yaml over the whole repo
+	@echo "INFO: Running every pre-commit hook on the whole repository..."
+	@$(PRE_COMMIT) run --all-files --show-diff-on-failure || (echo "ERROR: Lint failed" && exit 1)
 	$(call ECHO_OK,OK: Lint passed.)
 
-type-check:
+type-check: ## mypy and Pyright on a path (default: src tests), a quick subset of lint
 	@echo "INFO: Running type checking (mypy, pyright)..."
 	@uv run mypy $(_qual_dir) || (echo "ERROR: mypy failed" && exit 1)
 	@uv run pyright $(_qual_dir) || (echo "ERROR: pyright failed" && exit 1)
 	$(call ECHO_OK,OK: Type checking passed.)
 
-security:
+security: ## Bandit on a path (default: src tests), a quick subset of lint
 	@echo "INFO: Running security scan (bandit)..."
 	@uv run bandit -c pyproject.toml -r $(_qual_dir) || (echo "ERROR: Bandit failed" && exit 1)
 	$(call ECHO_OK,OK: Security scan passed.)
 
-quality: lint type-check security
-	$(call ECHO_OK,OK: Quality passed.)
-
-format:
+format: ## Black, isort and ruff --fix on a path (default: src tests)
 	@echo "INFO: Applying format fixes (black, isort, ruff --fix)..."
 	@uv run black $(_qual_dir) || (echo "ERROR: Black failed" && exit 1)
 	@uv run isort $(_qual_dir) || (echo "ERROR: Isort failed" && exit 1)
 	@uv run ruff check --fix $(_qual_dir) || (echo "ERROR: Ruff check --fix failed" && exit 1)
 	$(call ECHO_OK,OK: Format applied.)
 
-format-quality: format quality
-	$(call ECHO_OK,OK: Format and quality passed.)
-
-# Full local gate to run before finishing a task (matches AGENTS.md).
-# Uses recursive make so each sub-target sees a clean MAKECMDGOALS.
-check:
+# Definition of done (AGENTS.md). Recursive make so each sub-target sees a clean MAKECMDGOALS.
+check: ## lint + test-coverage: the definition of done
 	@$(MAKE) --no-print-directory lint
-	@$(MAKE) --no-print-directory type-check
 	@$(MAKE) --no-print-directory test-coverage
 	$(call ECHO_OK,OK: All checks passed.)
 
-pre-commit:
-	@echo "INFO: Running pre-commit hooks on all files..."
-	@uv run pre-commit run --all-files || (echo "ERROR: pre-commit hooks failed" && exit 1)
-	$(call ECHO_OK,OK: pre-commit hooks passed.)
+##@ Agents
 
-# --- GitHub Actions (via the gh CLI) ---
+sync-agents: ## Regenerate agent pointers from .agents/
+	@uv run --no-project tooling/sync_agents.py
+
+check-agents: ## Fail if agent pointers drifted from .agents/
+	@uv run --no-project tooling/sync_agents.py --check
+
+##@ GitHub Actions
 
 # Parsed from the goals after `actions` (the hyphen prefixes avoid colliding
 # with real targets):
@@ -224,7 +177,7 @@ _actions_name   := $(_actions_sub:workflow-%=%)
 _actions_branch := $(patsubst branch-%,%,$(filter branch-%,$(_actions_args)))
 _actions_ref    := $(or $(REF),$(_actions_branch),$(shell git rev-parse --abbrev-ref HEAD))
 
-actions:
+actions: ## actions ls lists the workflows; actions workflow-<name> [branch-<branch>] runs one
 	@case '$(_actions_sub)' in \
 	  ''|ls) \
 	    for f in .github/workflows/*.yaml; do \
