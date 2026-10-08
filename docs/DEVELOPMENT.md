@@ -143,7 +143,8 @@ push/PR whose bundled firmware is out of date.
 ## Releasing
 
 A release publishes to PyPI: `publish.yaml` builds and uploads the package when a GitHub release
-is published. PyPI never accepts the same version twice, so a release is final.
+is published. The repository has immutable releases turned on, so once published a `vX.Y.Z` tag
+can never move or be deleted, and PyPI never accepts the same version twice: a release is final.
 Agents prepare the notes and the commands; a person runs them (`.claude/settings.json` does not
 let agents create tags or releases).
 

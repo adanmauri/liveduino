@@ -110,6 +110,23 @@ A pull request checks what it changes; a push to `main` checks everything.
 The cost: a pull request can pass and `main` fail, on a check that spans files or on a file the
 pull request did not touch; the fix goes in the next pull request.
 
+## Merging to main
+
+A repository ruleset ("Main Branch Protection") guards `main`:
+
+- Changes reach it only through a pull request, never by a direct push, a force-push or a
+  deletion.
+- The `megalinter`, `trivy`, `bandit` and `Unit tests + coverage gate` checks must pass, on a
+  branch that is up to date with `main`. The firmware check is not required: it runs only when
+  boards or firmware change, and a required check that never starts would block the merge.
+- The history stays linear: pull requests merge with squash.
+- No approval is required, so the maintainer merges once the checks pass. Admins can bypass the
+  ruleset, for an emergency only.
+- A first-time contributor's pull request runs its workflows only once a maintainer approves the
+  run, and a pull request from a fork gets a read-only token and no secrets.
+
+The ruleset covers `main` only, so the tests can push the coverage badge to the `badges` branch.
+
 ## Workflows
 
 | Workflow            | Runs on                                                              | Jobs                                                                                                              |
