@@ -35,8 +35,8 @@ moved tag here a supply-chain risk for every user of the package.
 - A container image runs by digest. The MegaLinter action, even pinned to a commit, pulled its
   image by tag (`ghcr.io/oxsecurity/megalinter-python:v10.1.0`), so `code-quality.yaml` runs the
   image directly, as `docker://...:v10.1.0@sha256:...`.
-- Checkouts drop their credentials (`persist-credentials: false`), except in the job that pushes
-  the coverage badge; `create-pull-request` in the firmware workflow brings its own token.
+- Checkouts drop their credentials (`persist-credentials: false`); `create-pull-request` in the
+  firmware workflow brings its own token.
 - The publish workflow restores no cache (`enable-cache: false`), so a poisoned cache cannot end
   up in a release.
 
