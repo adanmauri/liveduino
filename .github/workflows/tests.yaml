@@ -57,12 +57,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write
+      contents: read
 
     steps:
-      # The credentials stay: the badge step pushes with them on main.
-      - name: Checkout code # zizmor: ignore[artipacked]
+      - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up uv
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
@@ -80,13 +81,6 @@ jobs:
 
       - name: Build sdist and wheel
         run: uv build
-
-      # Publishes the README's coverage badge to the `badges` branch, from main only; on pull
-      # requests it only reads the report.
-      - name: Publish coverage badge
-        uses: adanmauri/coverage-badges@3e2fea272ad148ce431db96b51e5081a13c7c415 # v1.0.0
-        with:
-          report: coverage.xml
 
   # Integration tests need a physical board reachable through LIVEDUINO_PORT and do not run on
   # GitHub-hosted runners. Run them locally or on a self-hosted runner with hardware attached:

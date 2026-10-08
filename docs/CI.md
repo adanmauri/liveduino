@@ -125,13 +125,11 @@ A repository ruleset ("Main Branch Protection") guards `main`:
 - A first-time contributor's pull request runs its workflows only once a maintainer approves the
   run, and a pull request from a fork gets a read-only token and no secrets.
 
-The ruleset covers `main` only, so the tests can push the coverage badge to the `badges` branch.
-
 ## Workflows
 
 | Workflow            | Runs on                                                              | Jobs                                                                                                              |
 |---------------------|----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `tests.yaml`        | push to `main`; PRs that touch the code, tests, scripts or packaging | unit tests with the 100% coverage gate, `uv build`, then the coverage badge (`main` only)                         |
+| `tests.yaml`        | push to `main`; PRs that touch the code, tests, scripts or packaging | unit tests with the 100% coverage gate, then `uv build`                                                           |
 | `code-quality.yaml` | push and PR to `main`                                                | MegaLinter (Python flavor): the changed files on PRs, everything on `main` and on PRs that change linter settings |
 | `security.yaml`     | push and PR to `main`, daily                                         | Trivy (results in the Security tab, except from PRs) and Bandit (report in the job summary); neither blocks       |
 | `firmware.yaml`     | push and PR to `main` that touch boards or firmware; manual          | `verify`: the bundle matches a fresh build; `regenerate` (manual): rebuild on Linux and open a PR                 |
@@ -159,8 +157,8 @@ cannot point anywhere else. It matters most in `publish.yaml`, which can upload 
   the comment together.
 - A tool an action downloads is pinned too when the action allows it: `security.yaml` sets the
   Trivy binary's version.
-- Checkouts drop their credentials (`persist-credentials: false`), except in the tests job, which
-  pushes the coverage badge; the publish job restores no cache.
+- Checkouts drop their credentials (`persist-credentials: false`), and the publish job restores no
+  cache.
 - Container images run by digest. MegaLinter runs as
   `docker://ghcr.io/oxsecurity/megalinter-python:v10.1.0@sha256:...`, because its action, even
   pinned to a commit, pulled the image by tag. Dependabot does not update `docker://` references,
