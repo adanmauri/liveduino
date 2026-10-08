@@ -127,9 +127,7 @@ def build_parser() -> argparse.ArgumentParser:
     boards_parser.add_argument(
         "board", nargs="?", default=None, help="Board id; list the firmwares available for it"
     )
-    boards_parser.add_argument(
-        "sub", nargs="?", choices=["firmwares"], help=argparse.SUPPRESS
-    )
+    boards_parser.add_argument("sub", nargs="?", choices=["firmwares"], help=argparse.SUPPRESS)
     boards_parser.set_defaults(handler=_cmd_boards)
 
     ports_parser = subparsers.add_parser("ports", help="List serial ports on the host")

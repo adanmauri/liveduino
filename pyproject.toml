@@ -46,18 +46,26 @@ Repository = "https://github.com/adanmauri/liveduino"
 Issues = "https://github.com/adanmauri/liveduino/issues"
 
 [dependency-groups]
-dev = [
+test = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+]
+lint = [
     "bandit>=1.9.4",
     "black>=26.5.1",
     "flake8>=7.3.0",
     "isort>=8.0.1",
     "mypy>=2.1.0",
-    "pre-commit>=4.6.0",
     "pylint>=4.0.6",
     "pyright>=1.1.411",
-    "pytest>=9.1.1",
-    "pytest-cov>=7.1.0",
     "ruff>=0.15.18",
+    "yamllint>=1.38.0",
+]
+# uv's default group: both groups above, plus pre-commit to run the hooks.
+dev = [
+    { include-group = "lint" },
+    { include-group = "test" },
+    "pre-commit>=4.6.0",
 ]
 
 [tool.uv]
@@ -83,6 +91,9 @@ line_length = 100
 
 [tool.pyright]
 pythonVersion = "3.13"
+# Resolve liveduino and tests.shared from the tree, also where the package is not installed
+# (MegaLinter in CI).
+extraPaths = ["src", "."]
 reportIncompatibleVariableOverride = "none"
 
 [tool.pylint.main]

@@ -13,6 +13,7 @@ class ArduinoMini(Board):
     ATmega328 board with 14 digital pins and 8 analog inputs (A6 and A7 are
     analog-only); PWM is available on pins 3, 5, 6, 9, 10, and 11.
     """
+
     id = "arduino:mini"
     fqbn = "arduino:avr:mini"
     name = "Arduino Mini"

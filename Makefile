@@ -23,10 +23,10 @@ define ECHO_TITLE
 	@printf '\033[36m%s\033[0m\n' "$(1)"
 endef
 
-.PHONY: help install install-dev clean clean-cache clean-deps \
+.PHONY: help install setup clean clean-cache clean-deps \
 	test test-unit test-integration test-coverage \
-	lint type-check security quality format format-quality check pre-commit build firmware firmware-setup \
-	actions \
+	lint type-check security format check build firmware firmware-setup \
+	sync-agents check-agents actions \
 	src tests docs
 
 # Default target
@@ -36,8 +36,8 @@ help:
 	@echo "======================================"
 	@echo ""
 	$(call ECHO_TITLE,[ENV] Environment & Dependencies:)
+	@echo "  setup                   - Install dev environment + git hooks (pre-commit, commit-msg)"
 	@echo "  install                 - Install production dependencies only"
-	@echo "  install-dev             - Install all dependencies (incl. dev) + pre-commit hooks"
 	@echo "  clean-cache             - Remove build artifacts and caches (keeps .venv)"
 	@echo "  clean-deps              - Remove .venv and clear uv cache"
 	@echo "  clean                   - clean-cache + clean-deps"
@@ -64,34 +64,34 @@ help:
 	@echo "                  LIVEDUINO_PORT=/dev/ttyACM0 make test-integration"
 	@echo ""
 	$(call ECHO_TITLE,[QUALITY] Code Quality:)
-	@echo "  lint                    - ruff, flake8, pylint"
-	@echo "  type-check              - mypy, pyright"
-	@echo "  security                - bandit"
-	@echo "  quality                 - lint + type-check + security"
+	@echo "  check                   - lint + test-coverage: the definition of done"
+	@echo "  lint                    - every hook in .pre-commit-config.yaml over the whole repo"
+	@echo "  type-check              - mypy, pyright only (quick subset of lint)"
+	@echo "  security                - bandit only (quick subset of lint)"
 	@echo "  format                  - black, isort, ruff --fix"
-	@echo "  format-quality          - format then quality"
-	@echo "  check                   - lint + type-check + test-coverage (pre-finish gate)"
-	@echo "  pre-commit              - run all pre-commit hooks on the repo"
 	@echo ""
 	@echo "  Usage:          make <target> [path] or DIR=path (default: src tests)"
-	@echo "  Examples:       make lint src   make type-check tests"
+	@echo "  Examples:       make type-check src   make format tests"
+	@echo ""
+	$(call ECHO_TITLE,[AGENTS] Agent assets:)
+	@echo "  sync-agents             - Regenerate agent pointers from .agents/"
+	@echo "  check-agents            - Fail if agent pointers drifted from .agents/"
 	@echo ""
 
 # --- Environment & dependencies ---
 
 install:
 	@echo "INFO: Installing production dependencies with UV..."
-	@uv sync --no-group dev || (echo "ERROR: Failed to install dependencies" && exit 1)
+	@uv sync --locked --no-default-groups || (echo "ERROR: Failed to install dependencies" && exit 1)
 	$(call ECHO_OK,OK: Installation complete.)
 
-install-dev:
-	@echo "INFO: Installing all dependencies (production + development) with UV..."
-	@uv sync --group dev || (echo "ERROR: Failed to install development dependencies" && exit 1)
-	@echo "INFO: Installing pre-commit hooks (commit + pre-push)..."
-	@uv run pre-commit install
-	@uv run pre-commit install --hook-type pre-push
-	@$(MAKE) --no-print-directory firmware-setup
-	$(call ECHO_OK,OK: Installation complete.)
+# pre-commit installs the Node.js and Go runtimes some hooks need, so the first run takes a while.
+setup:
+	@echo "INFO: Installing all dependencies (production + dev group) with UV..."
+	@uv sync --locked || (echo "ERROR: Failed to install development dependencies" && exit 1)
+	@echo "INFO: Installing git hooks (pre-commit, commit-msg)..."
+	@uv run pre-commit install --install-hooks || (echo "ERROR: Failed to install git hooks" && exit 1)
+	$(call ECHO_OK,OK: Setup complete. Run make firmware-setup too if you work on firmware.)
 
 clean-cache:
 	@echo "INFO: Removing build artifacts and caches..."
@@ -106,7 +106,7 @@ clean-deps:
 	$(call ECHO_OK,OK: Dependencies cleaned.)
 
 clean: clean-cache clean-deps
-	$(call ECHO_OK,OK: Environment at zero. Run make install-dev to reinstall.)
+	$(call ECHO_OK,OK: Environment at zero. Run make setup to reinstall.)
 
 # --- Build ---
 
@@ -167,11 +167,11 @@ test-coverage:
 
 # --- Code quality ---
 
+# The full linter set lives in .pre-commit-config.yaml (docs/CI.md); type-check, security and
+# format run single tools directly for a quick loop on a path.
 lint:
-	@echo "INFO: Running linters (ruff, flake8, pylint)..."
-	@uv run ruff check $(_qual_dir) || (echo "ERROR: Ruff check failed" && exit 1)
-	@uv run flake8 $(_qual_dir) || (echo "ERROR: Flake8 check failed" && exit 1)
-	@uv run pylint $(_qual_dir) || (echo "ERROR: Pylint check failed" && exit 1)
+	@echo "INFO: Running every pre-commit hook on the whole repository..."
+	@uv run pre-commit run --all-files --show-diff-on-failure || (echo "ERROR: Lint failed" && exit 1)
 	$(call ECHO_OK,OK: Lint passed.)
 
 type-check:
@@ -185,9 +185,6 @@ security:
 	@uv run bandit -c pyproject.toml -r $(_qual_dir) || (echo "ERROR: Bandit failed" && exit 1)
 	$(call ECHO_OK,OK: Security scan passed.)
 
-quality: lint type-check security
-	$(call ECHO_OK,OK: Quality passed.)
-
 format:
 	@echo "INFO: Applying format fixes (black, isort, ruff --fix)..."
 	@uv run black $(_qual_dir) || (echo "ERROR: Black failed" && exit 1)
@@ -195,21 +192,19 @@ format:
 	@uv run ruff check --fix $(_qual_dir) || (echo "ERROR: Ruff check --fix failed" && exit 1)
 	$(call ECHO_OK,OK: Format applied.)
 
-format-quality: format quality
-	$(call ECHO_OK,OK: Format and quality passed.)
-
-# Full local gate to run before finishing a task (matches AGENTS.md).
-# Uses recursive make so each sub-target sees a clean MAKECMDGOALS.
+# Definition of done (AGENTS.md). Recursive make so each sub-target sees a clean MAKECMDGOALS.
 check:
 	@$(MAKE) --no-print-directory lint
-	@$(MAKE) --no-print-directory type-check
 	@$(MAKE) --no-print-directory test-coverage
 	$(call ECHO_OK,OK: All checks passed.)
 
-pre-commit:
-	@echo "INFO: Running pre-commit hooks on all files..."
-	@uv run pre-commit run --all-files || (echo "ERROR: pre-commit hooks failed" && exit 1)
-	$(call ECHO_OK,OK: pre-commit hooks passed.)
+# --- Agent assets ---
+
+sync-agents:
+	@uv run --no-project tooling/sync_agents.py
+
+check-agents:
+	@uv run --no-project tooling/sync_agents.py --check
 
 # --- GitHub Actions (via the gh CLI) ---
 

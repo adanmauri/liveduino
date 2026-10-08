@@ -122,6 +122,7 @@ class _FirmataParser:
     tracks the current command and caches the latest digital and analog values
     for later reads.
     """
+
     def __init__(self) -> None:
         self.digital_inputs: dict[int, int] = {}
         self.analog_values: dict[int, int] = {}
@@ -256,9 +257,7 @@ class _FirmataParser:
     def _store_firmware(self, payload: list[int]) -> None:
         if len(payload) >= 2:
             chars = payload[2:]
-            name = "".join(
-                chr(chars[i] | (chars[i + 1] << 7)) for i in range(0, len(chars) - 1, 2)
-            )
+            name = "".join(chr(chars[i] | (chars[i + 1] << 7)) for i in range(0, len(chars) - 1, 2))
             self.firmware = (payload[0], payload[1], name)
 
     def _store_capabilities(self, payload: list[int]) -> None:
@@ -277,9 +276,7 @@ class _FirmataParser:
 
     def _store_analog_mapping(self, payload: list[int]) -> None:
         self.analog_mapping = {
-            pin: channel
-            for pin, channel in enumerate(payload)
-            if channel != _NO_ANALOG_CHANNEL
+            pin: channel for pin, channel in enumerate(payload) if channel != _NO_ANALOG_CHANNEL
         }
 
     def _store_pin_state(self, payload: list[int]) -> None:
@@ -318,6 +315,7 @@ class FirmataProtocol:
     reports, without relying on any third-party Firmata library. Operations that
     StandardFirmata cannot perform raise ``UnsupportedOperationError``.
     """
+
     def __init__(self, driver: Driver) -> None:
         self._driver = driver
         self._connected = False
@@ -417,9 +415,7 @@ class FirmataProtocol:
     def servo_write(self, pin: int, angle: int) -> None:
         """Move a servo to an angle (0-180 degrees), attaching it if needed."""
         if not 0 <= angle <= _MAX_SERVO_ANGLE:
-            raise InvalidValueError(
-                f"Servo angle must be 0-{_MAX_SERVO_ANGLE}, got {angle}"
-            )
+            raise InvalidValueError(f"Servo angle must be 0-{_MAX_SERVO_ANGLE}, got {angle}")
         self._send(bytes([SET_PIN_MODE, pin, _PIN_MODE_SERVO]))
         self._send(self._analog_message(pin, angle))
 

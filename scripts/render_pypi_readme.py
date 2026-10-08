@@ -23,9 +23,13 @@ from pathlib import Path
 
 REPO_BLOB = "https://github.com/adanmauri/liveduino/blob/main/"
 
-DIAGRAM_IMAGE = """<p align="center">
+DIAGRAM_ALT = (
+    "Host Python (Board API, FirmataProtocol, Driver: serial/TCP/Bluetooth) talks to the "
+    "Microcontroller (StandardFirmata, GPIO/ADC/PWM) and back"
+)
+DIAGRAM_IMAGE = f"""<p align="center">
   <img src="https://raw.githubusercontent.com/adanmauri/liveduino/main/docs/images/how-it-works.svg"
-       alt="Host Python (Board API, FirmataProtocol, Driver: serial/TCP/Bluetooth) talks to the Microcontroller (StandardFirmata, GPIO/ADC/PWM) and back"
+       alt="{DIAGRAM_ALT}"
        width="100%">
 </p>"""
 
@@ -43,9 +47,10 @@ def render(text: str) -> str:
 
 
 def main() -> None:
+    """Render README.md (or argv[1]) into argv[2], in place by default."""
     readme = Path(sys.argv[1] if len(sys.argv) > 1 else "README.md")
     out = Path(sys.argv[2] if len(sys.argv) > 2 else readme)
-    out.write_text(render(readme.read_text()))
+    out.write_text(render(readme.read_text(encoding="utf-8")), encoding="utf-8")
 
 
 if __name__ == "__main__":

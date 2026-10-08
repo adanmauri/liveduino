@@ -24,6 +24,7 @@ class AnalogPin:
     the Mega, ...), so the constant stores just the channel and each board maps
     it to a concrete digital pin or analog channel.
     """
+
     channel: int
 
     def __repr__(self) -> str:

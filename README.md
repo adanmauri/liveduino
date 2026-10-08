@@ -1,8 +1,9 @@
+<!-- markdownlint-disable-file MD041 -->
 <div align="center">
 
 # liveduino
 
-### A live Python REPL for your board: type a command, watch the hardware react instantly.
+<h3>A live Python REPL for your board: type a command, watch the hardware react instantly.</h3>
 
 [![Python](https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![uv](https://img.shields.io/badge/uv-managed-7C3AED?style=flat-square)](https://docs.astral.sh/uv/)
@@ -86,17 +87,17 @@ for Python 3.13 and a growing catalog of boards.
 
 ## Features
 
-| | |
-| --- | --- |
-| **Zero learning curve** | If you know Arduino, you are already done. Same names, same semantics, in Python |
-| **Instant feedback** | Every `digitalWrite` / `analogRead` fires on the board *now*: no compile, no upload, no wait |
-| **Real device coverage** | Digital I/O, analog input, PWM, **servo**, and **I2C** (sensors, displays, ...) — all over the bundled StandardFirmata, no extra firmware |
-| **No dependency bloat** | Native StandardFirmata 2.x, written in-house. No third-party Firmata library to drag along |
-| **No Arduino IDE** | Flashes StandardFirmata itself in pure Python over the bootloader; no IDE, no avrdude, no toolchain |
-| **Connect any way** | One API over USB serial, Wi-Fi/Ethernet (TCP), or Bluetooth RFCOMM; just swap the driver |
-| **Batteries-included catalog** | Auto-discovered profiles for UNO, Nano, Mini, Pro Mini, Fio, and more; add a board by dropping a file |
-| **Typed and safe** | `Literal` types (`PinMode`, `DigitalValue`, `BitOrder`) with pins, modes, and values validated before they hit the wire |
-| **Rock-solid** | 100% unit-test coverage with mocks, plus real-hardware integration tests |
+|                                |                                                                                                                                          |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| **Zero learning curve**        | If you know Arduino, you are already done. Same names, same semantics, in Python                                                         |
+| **Instant feedback**           | Every `digitalWrite` / `analogRead` fires on the board *now*: no compile, no upload, no wait                                             |
+| **Real device coverage**       | Digital I/O, analog input, PWM, **servo**, and **I2C** (sensors, displays, ...), all over the bundled StandardFirmata, no extra firmware |
+| **No dependency bloat**        | Native StandardFirmata 2.x, written in-house. No third-party Firmata library to drag along                                               |
+| **No Arduino IDE**             | Flashes StandardFirmata itself in pure Python over the bootloader; no IDE, no avrdude, no toolchain                                      |
+| **Connect any way**            | One API over USB serial, Wi-Fi/Ethernet (TCP), or Bluetooth RFCOMM; just swap the driver                                                 |
+| **Batteries-included catalog** | Auto-discovered profiles for UNO, Nano, Mini, Pro Mini, Fio, and more; add a board by dropping a file                                    |
+| **Typed and safe**             | `Literal` types (`PinMode`, `DigitalValue`, `BitOrder`) with pins, modes, and values validated before they hit the wire                  |
+| **Rock-solid**                 | 100% unit-test coverage with mocks, plus real-hardware integration tests                                                                 |
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 
@@ -105,15 +106,15 @@ for Python 3.13 and a growing catalog of boards.
 Others make you learn a new API or a new language. liveduino bets on the one you already
 know.
 
-| | liveduino | pyFirmata / Telemetrix | MicroPython |
-| --- | --- | --- | --- |
-| **API style** | Arduino/Wiring (`pinMode`, `digitalWrite`) | Library-specific | Python on device |
-| **I2C / serial API** | Arduino `Wire` / `Serial1` | Library-specific | Native Python |
-| **Code runs on** | Host Python | Host Python | Microcontroller |
-| **Firmware** | Stock StandardFirmata | Firmata / a custom sketch | MicroPython |
-| **Flashing** | Built in, pure Python (no Arduino IDE) | Arduino IDE / avrdude | esptool / external tool |
-| **Transports** | USB, Wi-Fi/Ethernet, Bluetooth (swap the driver) | Serial (mostly) | On-device |
-| **Learning curve for Arduino users** | Zero | New API | New language |
+|                                      | liveduino                                        | pyFirmata / Telemetrix    | MicroPython             |
+|--------------------------------------|--------------------------------------------------|---------------------------|-------------------------|
+| **API style**                        | Arduino/Wiring (`pinMode`, `digitalWrite`)       | Library-specific          | Python on device        |
+| **I2C / serial API**                 | Arduino `Wire` / `Serial1`                       | Library-specific          | Native Python           |
+| **Code runs on**                     | Host Python                                      | Host Python               | Microcontroller         |
+| **Firmware**                         | Stock StandardFirmata                            | Firmata / a custom sketch | MicroPython             |
+| **Flashing**                         | Built in, pure Python (no Arduino IDE)           | Arduino IDE / avrdude     | esptool / external tool |
+| **Transports**                       | USB, Wi-Fi/Ethernet, Bluetooth (swap the driver) | Serial (mostly)           | On-device               |
+| **Learning curve for Arduino users** | Zero                                             | New API                   | New language            |
 
 **What only liveduino does:**
 
@@ -122,7 +123,7 @@ know.
   `read`/`end`), plus `servoWrite`, `analogRead`, timing. A sketch ports almost line for line.
 - **Runs on the StandardFirmata that's already everywhere.** No custom firmware to build or
   maintain (Telemetrix needs its own); if the board already has StandardFirmata, liveduino
-  just talks to it — and flashes it for you in pure Python if it doesn't.
+  just talks to it, and flashes it for you in pure Python if it doesn't.
 - **The board self-describes.** `capabilities()` reads each pin's real modes from the
   firmware and uses them over the hardcoded catalog.
 - **One API over any wire.** Swap USB, Wi-Fi/Ethernet, or Bluetooth by changing a single
@@ -136,7 +137,7 @@ know.
 
 **Python 3.13+** is all you need to *use* liveduino ([uv](https://docs.astral.sh/uv/) is only
 for developing it). Connect an Arduino UNO (or compatible) via USB and note its serial port
-(`liveduino-cli ports` lists them). **No Arduino IDE, no avrdude, no toolchain** — liveduino
+(`liveduino-cli ports` lists them). **No Arduino IDE, no avrdude, no toolchain**: liveduino
 flashes the firmware for you next.
 
 ### Install
@@ -231,7 +232,7 @@ Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 **Python 3.13+**, stdlib-only ([pyserial](https://pyserial.readthedocs.io/) for serial;
 stdlib sockets for TCP/Bluetooth). `Board` subclasses expose camelCase Arduino methods over a
-native `FirmataProtocol` (StandardFirmata 2.x — no third-party Firmata library). Quality gate:
+native `FirmataProtocol` (StandardFirmata 2.x, no third-party Firmata library). Quality gate:
 pytest at 100% coverage, ruff, flake8, pylint, mypy, pyright, bandit.
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
@@ -246,19 +247,19 @@ timing (`delay`, `millis`, ...). Device functions that StandardFirmata cannot pe
 
 **What works over StandardFirmata today:**
 
-| Capability | Methods | Firmware |
-| --- | --- | --- |
-| Digital I/O | `pinMode`, `digitalWrite`, `digitalRead` | ✅ built in |
-| Analog input | `analogRead` | ✅ built in |
-| PWM output | `analogWrite` | ✅ built in |
-| **Servo** | `servoWrite`, `servoConfig` | ✅ built in (Servo lib) |
-| **I2C** | `board.wire` (Arduino `Wire`) | ✅ built in (Wire lib) |
-| **Discovery** | `info`, `capabilities`, `pinState`, `status` | ✅ built in (Firmata queries) |
-| **Streaming & serial** | `samplingInterval`, `readString`, `serial`, continuous I2C | ✅ built in |
-| Host-side timing | `delay`, `delayMicroseconds`, `millis`, `micros` | ✅ host only |
-| Tone / pulse / shift | `tone`, `noTone`, `pulseIn`, `shiftOut`, `shiftIn` | ⚠️ raise `UnsupportedOperationError` |
+| Capability             | Methods                                                    | Firmware                             |
+|------------------------|------------------------------------------------------------|--------------------------------------|
+| Digital I/O            | `pinMode`, `digitalWrite`, `digitalRead`                   | ✅ built in                           |
+| Analog input           | `analogRead`                                               | ✅ built in                           |
+| PWM output             | `analogWrite`                                              | ✅ built in                           |
+| **Servo**              | `servoWrite`, `servoConfig`                                | ✅ built in (Servo lib)               |
+| **I2C**                | `board.wire` (Arduino `Wire`)                              | ✅ built in (Wire lib)                |
+| **Discovery**          | `info`, `capabilities`, `pinState`, `status`               | ✅ built in (Firmata queries)         |
+| **Streaming & serial** | `samplingInterval`, `readString`, `serial`, continuous I2C | ✅ built in                           |
+| Host-side timing       | `delay`, `delayMicroseconds`, `millis`, `micros`           | ✅ host only                          |
+| Tone / pulse / shift   | `tone`, `noTone`, `pulseIn`, `shiftOut`, `shiftIn`         | ⚠️ raise `UnsupportedOperationError` |
 
-**Servo** and **I2C** are the real Arduino names too. I2C *is* Arduino's `Wire` — alias it
+**Servo** and **I2C** are the real Arduino names too. I2C *is* Arduino's `Wire`: alias it
 and a sketch ports verbatim:
 
 ```python
@@ -271,7 +272,7 @@ while Wire.available():
     value = Wire.read()
 ```
 
-**Discovery** — ask the board about itself instead of trusting the catalog:
+**Discovery**: ask the board about itself instead of trusting the catalog:
 
 ```python
 board.info()          # firmware + board identity
@@ -303,7 +304,7 @@ Full board table and how to add a board: [`docs/BOARDS.md`](docs/BOARDS.md).
 ## Connections
 
 **One API, every wire.** The board talks over a pluggable **driver**, so the same code runs
-over USB, Wi-Fi/Ethernet, or Bluetooth — you swap one line, never your code:
+over USB, Wi-Fi/Ethernet, or Bluetooth: you swap one line, never your code:
 
 ```python
 board = ArduinoUno().connect("/dev/ttyACM0")                          # USB serial (default)
@@ -332,13 +333,11 @@ Full reference: [`docs/CLI.md`](docs/CLI.md).
 
 ## Development
 
-Requires Python 3.13 and [uv](https://docs.astral.sh/uv/).
+Requires [uv](https://docs.astral.sh/uv/) (it installs Python 3.13 if needed).
 
 ```bash
-uv python pin 3.13
-uv sync --all-groups
-make install-dev        # installs dev deps + pre-commit hooks
-make check              # lint + type-check + 100% coverage gate
+make setup              # dev environment + git hooks
+make check              # every lint hook + the 100% coverage gate
 ```
 
 Every `make` target, the coverage gate, and how to run hardware integration tests:
@@ -355,17 +354,17 @@ Frameduino 0.x (Python 2, Pinguino-only) lives in the original
 
 ## Documentation
 
-| Document | Audience | Contents |
-| --- | --- | --- |
-| **This README** | Everyone | Motivation, quick start, overview |
-| [`docs/API.md`](docs/API.md) | Users | Full Arduino method table and analog pin model |
-| [`docs/BOARDS.md`](docs/BOARDS.md) | Users | Supported boards and how to add one |
-| [`docs/CONNECTIONS.md`](docs/CONNECTIONS.md) | Users | Drivers (serial, TCP, Bluetooth) and protocol override |
-| [`docs/CLI.md`](docs/CLI.md) | Users | `liveduino-cli` command: flash firmware, list boards and ports |
-| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Contributors | Setup, `make` targets, and tests |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Contributors | Layers, data flow, drivers, analog pins, testing |
-| [`firmware/arduino/README.md`](firmware/arduino/README.md) | Users | StandardFirmata setup and serial settings |
-| [`AGENTS.md`](AGENTS.md) | AI agents | Coding standards and guardrails |
+| Document                                                   | Audience     | Contents                                                       |
+|------------------------------------------------------------|--------------|----------------------------------------------------------------|
+| **This README**                                            | Everyone     | Motivation, quick start, overview                              |
+| [`docs/API.md`](docs/API.md)                               | Users        | Full Arduino method table and analog pin model                 |
+| [`docs/BOARDS.md`](docs/BOARDS.md)                         | Users        | Supported boards and how to add one                            |
+| [`docs/CONNECTIONS.md`](docs/CONNECTIONS.md)               | Users        | Drivers (serial, TCP, Bluetooth) and protocol override         |
+| [`docs/CLI.md`](docs/CLI.md)                               | Users        | `liveduino-cli` command: flash firmware, list boards and ports |
+| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)               | Contributors | Setup, `make` targets, and tests                               |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)             | Contributors | Layers, data flow, drivers, analog pins, testing               |
+| [`firmware/arduino/README.md`](firmware/arduino/README.md) | Users        | StandardFirmata setup and serial settings                      |
+| [`AGENTS.md`](AGENTS.md)                                   | AI agents    | Coding standards and guardrails                                |
 
 <p align="right">(<a href="#table-of-contents">back to top</a>)</p>
 

@@ -1,8 +1,8 @@
 """Arduino ``Wire`` (I2C) API over Firmata.
 
-Mirrors the Arduino ``Wire`` library — ``begin``, ``beginTransmission`` /
+Mirrors the Arduino ``Wire`` library: ``begin``, ``beginTransmission`` /
 ``write`` / ``endTransmission``, and ``requestFrom`` / ``available`` / ``read``
-(including the register overload ``requestFrom(addr, n, register)``) — so an
+(including the register overload ``requestFrom(addr, n, register)``), so an
 Arduino sketch ports almost verbatim. Reach it through ``board.wire``.
 
 Continuous reads (``readContinuous`` / ``value`` / ``stopReading``) are a Firmata

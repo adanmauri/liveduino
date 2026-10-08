@@ -13,6 +13,7 @@ class ArduinoFio(Board):
     ATmega328P board with 14 digital pins and 8 analog inputs (A6 and A7 are
     analog-only); PWM is available on pins 3, 5, 6, 9, 10, and 11.
     """
+
     id = "arduino:fio"
     fqbn = "arduino:avr:fio"
     name = "Arduino Fio"

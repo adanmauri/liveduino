@@ -18,6 +18,7 @@ class ProtocolClient(Protocol):
     writes) into the wire format understood by the firmware, and parses the
     responses returned over the driver.
     """
+
     def connect(self) -> None:
         """Establish the protocol session with the board."""
         ...

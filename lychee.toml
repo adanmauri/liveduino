@@ -1,0 +1,5 @@
+# Link checker settings, read by lychee in MegaLinter (SPELL_LYCHEE).
+# https://lychee.cli.rs/guides/config/
+
+# Bundled firmware and its manifest are generated, not documentation.
+exclude_path = ['src/liveduino/firmware']

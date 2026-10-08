@@ -13,6 +13,7 @@ class ArduinoDuemilanove(Board):
     ATmega328/168 board with 14 digital pins, 6 analog inputs, and PWM available
     on pins 3, 5, 6, 9, 10, and 11.
     """
+
     id = "arduino:diecimila"
     fqbn = "arduino:avr:diecimila"
     name = "Arduino Duemilanove or Diecimila"

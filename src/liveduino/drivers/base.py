@@ -15,6 +15,7 @@ class Driver(Protocol):
     open/close/read/write interface plus ``in_waiting`` so protocol clients can
     exchange bytes without depending on a concrete transport.
     """
+
     def open(self) -> None:
         """Open the channel."""
         ...

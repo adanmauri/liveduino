@@ -13,6 +13,7 @@ class FakeDriver:
     Records every byte written for later assertions and returns bytes queued via
     ``feed`` from subsequent reads, mimicking a connected board without hardware.
     """
+
     def __init__(self) -> None:
         self.opened = False
         self.written = bytearray()

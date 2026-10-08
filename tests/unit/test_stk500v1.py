@@ -48,21 +48,25 @@ def _ok() -> list[bytes]:
     return [bytes([_INSYNC]), bytes([_OK])]
 
 
-@pytest.mark.unit
-@patch("liveduino.programmers.stk500v1.time.sleep")
-@patch("liveduino.programmers.stk500v1.serial.Serial")
-def test_flash_with_verify(mock_serial_cls: MagicMock, _sleep: MagicMock) -> None:
-    responses = [
+def _flash_until_readback(readback: bytes) -> list[bytes]:
+    """Responses for a one-page flash up to and including the verify readback."""
+    return [
         bytes([_INSYNC, _OK]),  # sync
         *_ok(),  # enter progmode
         *_ok(),  # load address
         *_ok(),  # prog page
         *_ok(),  # verify load address
         bytes([_INSYNC]),  # read page insync
-        bytes([1, 2, 3, 4]),  # read page payload
+        readback,  # read page payload
         bytes([_OK]),  # read page ok
-        *_ok(),  # leave progmode
     ]
+
+
+@pytest.mark.unit
+@patch("liveduino.programmers.stk500v1.time.sleep")
+@patch("liveduino.programmers.stk500v1.serial.Serial")
+def test_flash_with_verify(mock_serial_cls: MagicMock, _sleep: MagicMock) -> None:
+    responses = [*_flash_until_readback(bytes([1, 2, 3, 4])), *_ok()]  # then leave progmode
     fake = FakeSerial(responses)
     mock_serial_cls.return_value = fake
     programmer = Stk500v1Programmer("/dev/ttyACM0", baud=115200, page_size=4)
@@ -162,16 +166,7 @@ def test_flash_short_read(mock_serial_cls: MagicMock, _sleep: MagicMock) -> None
 @patch("liveduino.programmers.stk500v1.time.sleep")
 @patch("liveduino.programmers.stk500v1.serial.Serial")
 def test_flash_verification_mismatch(mock_serial_cls: MagicMock, _sleep: MagicMock) -> None:
-    responses = [
-        bytes([_INSYNC, _OK]),  # sync
-        *_ok(),  # enter progmode
-        *_ok(),  # load address
-        *_ok(),  # prog page
-        *_ok(),  # verify load address
-        bytes([_INSYNC]),  # read page insync
-        bytes([9, 9, 9, 9]),  # read page payload (wrong)
-        bytes([_OK]),  # read page ok
-    ]
+    responses = _flash_until_readback(bytes([9, 9, 9, 9]))  # wrong payload
     mock_serial_cls.return_value = FakeSerial(responses)
     programmer = Stk500v1Programmer("/dev/ttyACM0", page_size=4)
     with pytest.raises(FlashError, match="Verification failed"):

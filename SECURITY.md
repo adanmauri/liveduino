@@ -5,9 +5,9 @@
 liveduino is in early development. Security fixes target the latest released version.
 
 | Version | Supported |
-| --- | --- |
-| 0.1.x | Yes |
-| < 0.1 | No |
+|---------|-----------|
+| 0.1.x   | Yes       |
+| < 0.1   | No        |
 
 ## Reporting a vulnerability
 
@@ -15,7 +15,7 @@ Please do not report security vulnerabilities through public GitHub issues.
 
 Instead, report them privately through
 [GitHub Security Advisories](https://github.com/adanmauri/liveduino/security/advisories/new),
-or by email to **adan.mauri@gmail.com**.
+or by email to <adan.mauri@gmail.com>.
 
 Include as much of the following as you can:
 

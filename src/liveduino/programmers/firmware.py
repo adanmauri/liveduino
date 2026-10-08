@@ -47,9 +47,7 @@ def _firmware_names(manifest: dict[str, Any], board_id: str) -> list[str]:
     return names
 
 
-def _select_entry(
-    manifest: dict[str, Any], board_id: str, sketch: str | None
-) -> dict[str, Any]:
+def _select_entry(manifest: dict[str, Any], board_id: str, sketch: str | None) -> dict[str, Any]:
     """Return the manifest entry for a board's firmware, or raise FlashError."""
     primary = manifest.get("boards", {}).get(board_id)
     if sketch is None:
