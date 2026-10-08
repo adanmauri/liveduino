@@ -22,10 +22,13 @@ Liveduino has used uv since the rewrite from Frameduino: `pyproject.toml`, `uv.l
 uv for everything in development and release:
 
 - `pyproject.toml` declares the runtime dependencies with compatible ranges (`pyserial>=3.5`) and
-  the development tools in two groups, `test` and `lint`; `dev` includes both plus `pre-commit`
-  and is uv's default group.
-- `uv.lock` and `.python-version` (3.13) are committed; CI installs with `--locked`, and each job
+  the development tools in two groups, `test` and `lint`; `dev` includes both and is uv's default
+  group. pre-commit runs through `uvx`, at the version the `Makefile` pins.
+- `uv.lock` and `.python-version` are committed; CI installs with `--locked`, and each job
   installs only the group it needs.
+- Development runs on the newest Python (`.python-version`, 3.14), and the tests also run on the
+  oldest one `requires-python` allows (3.13), in an isolated environment
+  (`uv run --isolated --python 3.13`), so the project `.venv` stays on 3.14.
 - `make` targets, the local pre-commit hooks and CI (`astral-sh/setup-uv`) call uv.
 - Dependabot watches the `uv` ecosystem.
 

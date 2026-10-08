@@ -40,8 +40,3 @@ Items not implemented yet. Add entries when scope is agreed; link to issues when
 - [x] Flashing integration test on real hardware (LIVEDUINO_FLASH_PORT)
 - [ ] Caterina/AVR109 programmer (Leonardo, Micro)
 - [ ] SAM-BA/BOSSA programmer (MKR, Nano 33 IoT)
-
-## Tooling / CI
-
-- [ ] Run the MegaLinter image by digest: pinning the action to a commit does not freeze the
-      image it pulls by tag (`docs/adr/0006-actions-are-pinned-to-a-commit.md`)

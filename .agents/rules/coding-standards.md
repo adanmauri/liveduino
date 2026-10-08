@@ -72,7 +72,7 @@ descriptive line.
   `LIVEDUINO_PORT`, and skip without one.
 - Test public methods and attributes only, never `_private` ones or implementation details.
 - Tests follow this same style guide: docstrings, type hints, formatting.
-- `make test-coverage` requires **100% line coverage** of `src/liveduino/`. Touching an uncovered
+- `make test` requires **100% line coverage** of `src/liveduino/`. Touching an uncovered
   path means adding or extending unit tests.
 
 ## Dependencies: [ADR-0001](../../docs/adr/0001-uv-is-the-development-toolchain.md)
@@ -92,10 +92,13 @@ descriptive line.
 ## Workflows: [ADR-0006](../../docs/adr/0006-actions-are-pinned-to-a-commit.md)
 
 - Every `uses:` is pinned to a full commit SHA with the version in a comment
-  (`@<sha> # v7.0.1`). `persist-credentials: false` on every checkout whose job does not push.
+  (`@<sha> # v7.0.1`), and a `docker://` image to its digest (`:vX.Y.Z@sha256:...`).
+  `persist-credentials: false` on every checkout whose job does not push.
 - Every workflow starts with `permissions: {}`; each job asks for what it needs.
 - A tag, release or package that disappeared or moved is a signal, not housekeeping: read the
   upstream advisories and check this repository's runs before replacing it.
+- What a tool's container ships (versions, venvs, uv) is read from its Dockerfile at the pinned
+  commit, never assumed.
 
 ## Docs
 

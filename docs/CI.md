@@ -1,8 +1,7 @@
 # Checks and CI
 
-What checks a change, where, and why. Setup and commands are in [DEVELOPMENT.md](DEVELOPMENT.md);
-the decisions behind this page are ADRs [0002](adr/0002-quality-gates-pre-commit-locally-megalinter-in-ci.md)
-to [0006](adr/0006-actions-are-pinned-to-a-commit.md).
+What checks a change, where, and why. Setup and commands are in [DEVELOPMENT.md](DEVELOPMENT.md),
+and how the library works inside in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Two layers
 
@@ -37,7 +36,7 @@ hooks passes the same linters in CI.
 | `tooling/sync_agents.py --check`       | agent pointers in sync with `.agents/`                                                  |     yes      |                                           |
 | `tooling/check_docs.py`                | relative links in Markdown, ADR numbering and index                                     |     yes      |                                           |
 | `tooling/check_commit_msg.py`          | no tool attribution in the commit message                                               |  commit-msg  |                                           |
-| pytest                                 | unit tests with the 100% coverage gate                                                  | `make check` | `tests.yaml`                              |
+| pytest                                 | unit tests: the 100% coverage gate on 3.14, then on 3.13                                | `make check` | `tests.yaml`                              |
 | `uv build`                             | the sdist and wheel build                                                               | `make build` | `tests.yaml`                              |
 | `make firmware`                        | the bundled firmware matches a fresh Linux build                                        |              | `firmware.yaml`                           |
 | Trivy, Grype, OSV-Scanner, checkov     | vulnerable dependencies, misconfigured workflows                                        |              | MegaLinter; Trivy also in `security.yaml` |
@@ -73,10 +72,20 @@ linters at `pyproject.toml`, and the other linters' settings live in the reposit
   `additional_dependencies` for the Node.js and Go packages, as `rev` for betterleaks, actionlint,
   shellcheck and zizmor. pre-commit installs the Node.js and Go runtimes they need.
 
-**Bumping MegaLinter**, usually a Dependabot pull request: read the versions in the new image's
-Dockerfile (`flavors/python/Dockerfile` in the MegaLinter repository, at the new commit), update
-the non-Python hooks in `.pre-commit-config.yaml` to match, run `make check`, fix what the new
-versions report, and push it all in the same pull request. Nothing checks this automatically.
+**Bumping MegaLinter** is manual: CI runs its image by digest, and Dependabot does not update
+`docker://` references.
+
+1. Pick a release from [MegaLinter's releases](https://github.com/oxsecurity/megalinter/releases),
+   at least 14 days old, and read its changelog for breaking changes.
+2. Get the image digest: `docker buildx imagetools inspect ghcr.io/oxsecurity/megalinter-python:vX.Y.Z`
+   prints it as `Digest:`.
+3. Update the `uses: docker://ghcr.io/oxsecurity/megalinter-python:vX.Y.Z@sha256:...` line in
+   `code-quality.yaml`, tag and digest together.
+4. Read the versions in the release's Dockerfile (`flavors/python/Dockerfile` in the MegaLinter
+   repository, at the tag) and update the non-Python hooks in `.pre-commit-config.yaml` to match.
+5. Run `make check`, fix what the new versions report, and push it all in one pull request.
+
+Nothing checks the hook versions automatically.
 
 ## What a pull request checks
 
@@ -93,7 +102,8 @@ A pull request checks what it changes; a push to `main` checks everything.
 - **Tests** run in full whenever they run, because a change in one module can break another.
   Pull requests that touch none of `src/`, `tests/`, `scripts/`, `pyproject.toml`, `uv.lock`,
   `.python-version`, `README.md`, `LICENSE` or `tests.yaml` skip them; `main` always runs them.
-  A first job, `changes`, makes that call, so the check reports as skipped instead of pending.
+  A first job, `changes`, makes that call, so the `test` and `test-compat` checks still report
+  (as skipped, which counts as passing) instead of staying pending, as a `paths:` filter would.
 - **Firmware** runs only when boards, the bundled firmware or its build script change.
 - **Locally**, the hooks check the staged files, but mypy, Pyright, Pylint and Bandit check the
   whole project whenever a Python file changes.
@@ -101,16 +111,32 @@ A pull request checks what it changes; a push to `main` checks everything.
 The cost: a pull request can pass and `main` fail, on a check that spans files or on a file the
 pull request did not touch; the fix goes in the next pull request.
 
+## Merging to main
+
+A repository ruleset ("Main Branch Protection") guards `main`:
+
+- Changes reach it only through a pull request, never by a direct push, a force-push or a
+  deletion.
+- The `megalinter`, `trivy`, `bandit`, `test` and `test-compat` checks must pass, on a branch that
+  is up to date with `main`.
+- The history stays linear: pull requests merge with squash, no merge commits.
+- No approval is required, so the maintainer merges once the checks pass. Admins can bypass the
+  ruleset, for an emergency only.
+- A first-time contributor's pull request runs its workflows only once a maintainer approves the
+  run, and a pull request from a fork gets a read-only token and no secrets.
+
+The ruleset covers `main` only, so the tests can push the coverage badge to the `badges` branch.
+
 ## Workflows
 
-| Workflow            | Runs on                                                              | Jobs                                                                                                              |
-|---------------------|----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `tests.yaml`        | push to `main`; PRs that touch the code, tests, scripts or packaging | unit tests with the 100% coverage gate, then `uv build`                                                           |
-| `code-quality.yaml` | push and PR to `main`                                                | MegaLinter (Python flavor): the changed files on PRs, everything on `main` and on PRs that change linter settings |
-| `security.yaml`     | push and PR to `main`, daily                                         | Trivy (results in the Security tab, except from PRs) and Bandit (report in the job summary); neither blocks       |
-| `firmware.yaml`     | push and PR to `main` that touch boards or firmware; manual          | `verify`: the bundle matches a fresh build; `regenerate` (manual): rebuild on Linux and open a PR                 |
-| `publish.yaml`      | a published GitHub release; manual                                   | render the PyPI README, build, publish to PyPI with trusted publishing                                            |
-| `todo.yaml`         | push to `main`                                                       | turns `TODO` and `FIXME` comments in code into issues                                                             |
+| Workflow             | Runs on                                                              | Jobs                                                                                                              |
+|----------------------|----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| `tests.yaml`         | push to `main`; PRs that touch the code, tests, scripts or packaging | `test`: the 100% coverage gate, `uv build`, the coverage badge (`main` only); `test-compat`: the tests on 3.13    |
+| `code-quality.yaml`  | push and PR to `main`                                                | MegaLinter (Python flavor): the changed files on PRs, everything on `main` and on PRs that change linter settings |
+| `security.yaml`      | push and PR to `main`, daily                                         | Trivy (results in the Security tab, except from PRs) and Bandit (report in the job summary); neither blocks       |
+| `firmware.yaml`      | push and PR to `main` that touch boards or firmware; manual          | `verify`: the bundle matches a fresh build; `regenerate` (manual): rebuild on Linux and open a PR                 |
+| `publish.yaml`       | a published GitHub release; manual                                   | render the PyPI README, build, publish to PyPI with trusted publishing                                            |
+| `todo-to-issue.yaml` | push to `main`                                                       | turns `TODO` and `FIXME` comments in code into issues                                                             |
 
 Every workflow starts with no permissions (`permissions: {}`), and each job asks for what it
 needs. `make actions ls` lists them and `make actions workflow-<name>` triggers one.
@@ -133,6 +159,9 @@ cannot point anywhere else. It matters most in `publish.yaml`, which can upload 
   the comment together.
 - A tool an action downloads is pinned too when the action allows it: `security.yaml` sets the
   Trivy binary's version.
-- Checkouts drop their credentials (`persist-credentials: false`), and the publish job restores
-  no cache.
-- Still open: the MegaLinter action pulls its Docker image by tag (`TODO.md`).
+- Checkouts drop their credentials (`persist-credentials: false`), except in the `test` job, which
+  pushes the coverage badge; the publish job restores no cache.
+- Container images run by digest. MegaLinter runs as
+  `docker://ghcr.io/oxsecurity/megalinter-python:v10.1.0@sha256:...`, because its action, even
+  pinned to a commit, pulled the image by tag. Dependabot does not update `docker://` references,
+  so MegaLinter is bumped by hand (above).

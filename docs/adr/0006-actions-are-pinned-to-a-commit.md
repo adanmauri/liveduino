@@ -32,8 +32,11 @@ moved tag here a supply-chain risk for every user of the package.
 - A tool an action downloads is pinned as well when the action allows it: `security.yaml` sets the
   Trivy binary to `v0.70.0`.
 - Every workflow starts with `permissions: {}`, and each job asks for what it needs.
-- Checkouts drop their credentials (`persist-credentials: false`); `create-pull-request` in the
-  firmware workflow brings its own token.
+- A container image runs by digest. The MegaLinter action, even pinned to a commit, pulled its
+  image by tag (`ghcr.io/oxsecurity/megalinter-python:v10.1.0`), so `code-quality.yaml` runs the
+  image directly, as `docker://...:v10.1.0@sha256:...`.
+- Checkouts drop their credentials (`persist-credentials: false`), except in the job that pushes
+  the coverage badge; `create-pull-request` in the firmware workflow brings its own token.
 - The publish workflow restores no cache (`enable-cache: false`), so a poisoned cache cannot end
   up in a release.
 
@@ -50,11 +53,9 @@ moved tag here a supply-chain risk for every user of the package.
   both in step.
 - A fix released upstream reaches this repository only through that monthly pull request, two
   weeks after its release at the earliest.
-- The MegaLinter action runs its image by tag (`ghcr.io/oxsecurity/megalinter-python:v10.1.0`),
-  which pinning the action to a commit does not freeze.
+- Dependabot does not update `docker://` references, so MegaLinter is bumped by hand.
 
 ### Follow-ups
 
-- `TODO.md`: run the MegaLinter image by digest.
 - The workflow rules in [`coding-standards.md`](../../.agents/rules/coding-standards.md) cite
   this ADR.

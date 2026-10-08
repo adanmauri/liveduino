@@ -6,7 +6,7 @@ thin pointers here.
 
 ## What this repo is
 
-**Liveduino** is a Python 3.13 library that controls microcontrollers from the host with the
+**Liveduino** is a Python 3.13+ library that controls microcontrollers from the host with the
 **Arduino/Wiring API** (`pinMode`, `digitalWrite`, `analogRead`, ...). It is the successor of
 [Frameduino](https://github.com/adanmauri/frameduino), published on PyPI as **`liveduino`**.
 
@@ -69,7 +69,8 @@ tooling/                    repo scripts (agent pointer sync, docs and commit-ms
 ## Before you finish
 
 - `make check` passes: every hook in [`.pre-commit-config.yaml`](.pre-commit-config.yaml) over the
-  whole repo, then the unit tests with the 100% coverage gate.
+  whole repo, then the unit tests with the 100% coverage gate on 3.14 and again on 3.13, the
+  oldest supported Python.
 - `make build` passes when packaging, `pyproject.toml` or `src/liveduino/firmware/` changed.
 - New code has unit tests; hardware paths have integration tests that skip without a board.
 - README, `docs/`, `firmware/*/README.md` and this file agree with the change.
@@ -90,7 +91,8 @@ Unit tests cover the protocol, drivers and boards against mocks. They cannot pro
 ## Boundaries
 
 - Never push to `main`, force-push, or rewrite shared history unless the user asks for it.
-- Never create tags or GitHub releases without explicit approval: a release publishes to PyPI.
+- Never create tags or GitHub releases: a person does, because a release publishes to PyPI and
+  cannot be undone. Prepare the notes and the commands ([`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#releasing)).
 - Never add a runtime dependency without approval (see the guardrails).
 - Never break the public API or Arduino/Wiring fidelity.
 - Never bypass the hooks (`--no-verify`) or weaken a check to make it pass.

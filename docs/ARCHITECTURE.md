@@ -2,6 +2,9 @@
 
 Liveduino is a layered Python library that exposes the Arduino/Wiring API while delegating driver (channel) and protocol details to pluggable backends.
 
+How it works inside. What it does and how to use it are in the [README](../README.md); setup,
+commands and releases in [DEVELOPMENT.md](DEVELOPMENT.md); what checks a change in [CI.md](CI.md).
+
 ## Layers
 
 ```text
@@ -131,4 +134,4 @@ interpreter evolved from the original [Frameduino](https://github.com/adanmauri/
 - **Unit tests** (`tests/unit/`, `@pytest.mark.unit`): mocks only, no hardware.
 - **Integration tests** (`tests/integration/`, `@pytest.mark.integration`): require `LIVEDUINO_PORT` and StandardFirmata on the board.
 
-Coverage gate: 100% line coverage on `src/liveduino/` via `make test-coverage`.
+Coverage gate: 100% line coverage on `src/liveduino/` via `make test`.
