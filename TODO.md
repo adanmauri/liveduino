@@ -11,7 +11,7 @@ Items not implemented yet. Add entries when scope is agreed; link to issues when
 - [x] Discovery: `info`, `capabilities` (cached, overrides the catalog), `pinState`, `status`
 - [x] `samplingInterval`, `readString` (board messages), serial relay (`board.serial`)
 - [x] `reset` (SYSTEM_RESET)
-- [ ] `tone` / `noTone` / `pulseIn` / `shiftOut` / `shiftIn` — not defined by the Firmata
+- [ ] `tone` / `noTone` / `pulseIn` / `shiftOut` / `shiftIn`: not defined by the Firmata
       protocol (absent from StandardFirmata and StandardFirmataPlus). Needs custom firmware:
       a StandardFirmata/ConfigurableFirmata build with a bespoke sysex per function plus the
       matching sysex on the client. See `docs/ARCHITECTURE.md`.
@@ -40,3 +40,8 @@ Items not implemented yet. Add entries when scope is agreed; link to issues when
 - [x] Flashing integration test on real hardware (LIVEDUINO_FLASH_PORT)
 - [ ] Caterina/AVR109 programmer (Leonardo, Micro)
 - [ ] SAM-BA/BOSSA programmer (MKR, Nano 33 IoT)
+
+## Tooling / CI
+
+- [ ] Run the MegaLinter image by digest: pinning the action to a commit does not freeze the
+      image it pulls by tag (`docs/adr/0006-actions-are-pinned-to-a-commit.md`)

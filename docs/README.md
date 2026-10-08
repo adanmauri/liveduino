@@ -5,21 +5,24 @@ quick start, and overview; the pages here go deeper on each topic.
 
 ## For users
 
-| Document | Contents |
-| --- | --- |
-| [`API.md`](API.md) | Full Arduino method table, analog pins, servo, I2C (+ `Wire`), discovery, serial relay, and helpers |
-| [`BOARDS.md`](BOARDS.md) | Supported boards and how to add one |
-| [`CONNECTIONS.md`](CONNECTIONS.md) | Drivers (serial, TCP, Bluetooth) and the protocol override |
-| [`CLI.md`](CLI.md) | The `liveduino-cli` command: flash firmware, list boards and ports |
+| Document                           | Contents                                                                                            |
+|------------------------------------|-----------------------------------------------------------------------------------------------------|
+| [`API.md`](API.md)                 | Full Arduino method table, analog pins, servo, I2C (+ `Wire`), discovery, serial relay, and helpers |
+| [`BOARDS.md`](BOARDS.md)           | Supported boards and how to add one                                                                 |
+| [`CONNECTIONS.md`](CONNECTIONS.md) | Drivers (serial, TCP, Bluetooth) and the protocol override                                          |
+| [`CLI.md`](CLI.md)                 | The `liveduino-cli` command: flash firmware, list boards and ports                                  |
 
 ## For contributors
 
-| Document | Contents |
-| --- | --- |
-| [`DEVELOPMENT.md`](DEVELOPMENT.md) | Setup, `make` targets, the coverage gate, and tests |
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Layers, data flow, drivers, analog pins, and testing |
+| Document                             | Contents                                                                   |
+|--------------------------------------|----------------------------------------------------------------------------|
+| [`DEVELOPMENT.md`](DEVELOPMENT.md)   | Setup, `make` targets, the coverage gate, and tests                        |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Layers, data flow, drivers, analog pins, and testing                       |
+| [`CI.md`](CI.md)                     | Which check runs where: local hooks, MegaLinter, workflows, pinned actions |
+| [`adr/`](adr/README.md)              | Architecture Decision Records: the why behind the toolchain and checks     |
 
 ## See also
 
 - [`../firmware/README.md`](../firmware/README.md) for flashing StandardFirmata onto the board.
-- [`../AGENTS.md`](../AGENTS.md) for coding standards and guardrails.
+- [`../AGENTS.md`](../AGENTS.md) for the agent operating guidelines, and
+  [`../.agents/rules/`](../.agents/rules/) for coding standards and guardrails.

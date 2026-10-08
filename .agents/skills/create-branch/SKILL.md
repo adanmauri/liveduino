@@ -12,11 +12,11 @@ Create a git branch in a safe, repeatable way, following naming conventions and 
 ## Workflow
 
 1. Confirm branch intent from user input:
-   - Type: `feature`, `fix`, `chore`, `refactor`, `docs`, `test`, `hotfix`
+   - Type: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `ci`
    - Scope/slug: short lowercase words separated with `-`
 2. Build branch name with this default pattern:
    - `<type>/<slug>`
-   - Example: `fix/cart-quantity-validation`
+   - Example: `fix/analog-read-stale-value`
 3. Validate repo state before creating the branch:
    - Run `git status --short --branch`
    - If there are unrelated changes, warn and continue only if user agrees.
@@ -43,8 +43,8 @@ Create a git branch in a safe, repeatable way, following naming conventions and 
 - Use `-` as separator.
 - Avoid spaces, underscores, and special characters.
 - Keep names short but descriptive.
-- Include ticket ID first when present:
-  - `feature/abc-123-book-search-filters`
+- Include the issue number first when there is one:
+  - `feat/42-mega-board-profile`
 
 ## Safety Rules
 

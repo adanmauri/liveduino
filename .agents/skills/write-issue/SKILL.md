@@ -72,3 +72,5 @@ or instead of coding, or wants to update an existing one.
 - Never paste secrets, tokens, or full device paths that reveal sensitive setup.
 - Keep the report concrete and minimal; prefer a small repro snippet over logs.
 - Preserve Arduino/Wiring API fidelity when proposing API changes.
+- **No tool attribution.** No "Generated with", no robot emoji, no footer crediting an
+  assistant or its vendor (see `create-commit`).

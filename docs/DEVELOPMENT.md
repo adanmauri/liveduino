@@ -1,30 +1,87 @@
 # Development
 
-Requires Python 3.13 and [uv](https://docs.astral.sh/uv/).
+How to set up, check and change this repository. What the library does is in the
+[README](../README.md), how it works inside in [ARCHITECTURE.md](ARCHITECTURE.md), and what checks a
+change, locally and in CI, in [CI.md](CI.md).
+
+## Setup
+
+Needs [uv](https://docs.astral.sh/uv/) and `git`. uv installs Python 3.13 (from
+`.python-version`) when it is missing, and pre-commit installs the Node.js and Go runtimes some
+hooks need (the first `make setup` takes a few minutes for that).
 
 ```bash
-uv python pin 3.13
-uv sync --all-groups
-make install-dev        # installs dev deps + pre-commit hooks
-make check              # lint + type-check + 100% coverage gate
+make setup            # uv sync --locked, then installs the pre-commit and commit-msg hooks
+make check            # everything that must pass before a change is done
+make firmware-setup   # only when you work on the bundled firmware (arduino-cli toolchain)
 ```
 
-| Target | What it does |
-| --- | --- |
-| `make install-dev` | Install all deps (incl. dev) + pre-commit hooks + firmware toolchain |
-| `make lint` | ruff, flake8, pylint |
-| `make type-check` | mypy, pyright |
-| `make security` | bandit |
-| `make format` | black, isort, ruff --fix |
-| `make check` | lint + type-check + 100% coverage gate |
-| `make test-coverage` | Unit tests with 100% coverage gate |
-| `make test-integration` | Integration tests (requires `LIVEDUINO_PORT`) |
-| `make build` | Build the wheel |
-| `make firmware-setup` | Install the pinned arduino-cli core + libraries |
-| `make firmware` | Rebuild the bundled StandardFirmata hex (needs `firmware-setup`) |
-| `make actions ls` / `make actions workflow-<name>` | List / trigger a GitHub Actions workflow via `gh` |
+`make setup` creates `.venv` with the `dev` dependency group (`test` + `lint` + `pre-commit`).
 
-Integration tests (real hardware):
+## Commands
+
+| Target                                             | What it does                                                                                    |
+|----------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| `make setup`                                       | Install the dev environment and the git hooks (pre-commit, commit-msg)                          |
+| `make install`                                     | Install the runtime dependencies only                                                           |
+| `make check`                                       | `lint`, then `test-coverage`: the definition of done                                            |
+| `make lint`                                        | Every hook in [`.pre-commit-config.yaml`](../.pre-commit-config.yaml) over the whole repository |
+| `make type-check`                                  | mypy and Pyright only, on a path (`make type-check src`): a quick subset of `lint`              |
+| `make security`                                    | Bandit only, on a path: a quick subset of `lint`                                                |
+| `make format`                                      | Black, isort, `ruff --fix` on a path                                                            |
+| `make test-coverage`                               | Unit tests with the 100% coverage gate                                                          |
+| `make test-unit` / `make test`                     | Unit tests / every test (`COVERAGE=1` adds coverage, `ARGS="..."` goes to pytest)               |
+| `make test-integration`                            | Integration tests (requires `LIVEDUINO_PORT`)                                                   |
+| `make build`                                       | Build the sdist and wheel                                                                       |
+| `make firmware-setup`                              | Install the pinned arduino-cli core + libraries                                                 |
+| `make firmware`                                    | Rebuild the bundled StandardFirmata hex (needs `firmware-setup`)                                |
+| `make sync-agents` / `make check-agents`           | Regenerate / verify the agent pointers from `.agents/`                                          |
+| `make actions ls` / `make actions workflow-<name>` | List / trigger a GitHub Actions workflow via `gh`                                               |
+
+## Conventions
+
+The binding checklists are [`.agents/rules/coding-standards.md`](../.agents/rules/coding-standards.md)
+and [`.agents/rules/library-guardrails.md`](../.agents/rules/library-guardrails.md), for people
+and agents alike. The short version:
+
+- **Language:** code, comments, docs, commit messages and user-facing text in English; no em dash.
+- **Python:** 3.13+; built-in generics and `X | None`; type hints everywhere; the docstring format
+  in the coding standards.
+- **Arduino fidelity:** camelCase board methods with Arduino's names and semantics.
+- **Commits:** [Conventional Commits](https://www.conventionalcommits.org/)
+  (`feat(boards): ...`, `fix(protocols): ...`), one concern per commit, no tool attribution.
+- **Branches:** `feat/...`, `fix/...`, `docs/...`, `chore/...` from an up-to-date `main`.
+- **Pull requests:** fill [the template](../.github/PULL_REQUEST_TEMPLATE.md); the test plan lists
+  only what was actually run.
+- **Decisions:** a change that reverses or extends one comes with a new [ADR](adr/README.md).
+
+## Dependencies
+
+uv manages the interpreter, the environment, the lock and every command; never `pip`.
+
+- Runtime dependencies (`pyserial`) declare compatible ranges; adding one needs approval.
+- Development tools are in the `test` and `lint` groups of `pyproject.toml`, unpinned there and
+  pinned in `uv.lock`, which is committed. Add one with `uv add --group <test|lint> <package>`.
+  CI installs only the group a job needs, with `--locked`.
+- Dependabot opens monthly updates for `uv.lock` and the actions, for releases at least 14 days
+  old. Pick the same age when bumping anything by hand.
+- The pre-commit hooks outside uv pin the MegaLinter image's versions; how to bump them is in
+  [CI.md](CI.md#same-settings-and-mostly-the-same-versions).
+
+## Agent assets
+
+AI agents follow [`AGENTS.md`](../AGENTS.md), the one canonical instructions file; `CLAUDE.md` and
+`.github/copilot-instructions.md` only point to it. Rules (`.agents/rules/`) and skills
+(`.agents/skills/`) live once, in [`.agents/`](../.agents/README.md), and
+`tooling/sync_agents.py` writes a thin pointer for each tool in `.claude/skills/`,
+`.github/skills/`, `.github/instructions/` and `.cursor/rules/`. Pointers are generated and
+committed: edit the file in `.agents/`, then run `make sync-agents`; `make check` fails when they
+drift. No tool is credited in commits, pull requests or docs, and a commit-msg hook rejects
+attribution lines.
+
+## Integration tests
+
+They need a real board and skip without one:
 
 ```bash
 LIVEDUINO_PORT=/dev/ttyACM0 make test-integration
@@ -56,7 +113,7 @@ per-deployment config (`StandardFirmataEthernet` needs the `Ethernet` library;
 `StandardFirmataWiFi` needs a configured `wifiConfig.h`).
 
 `make firmware-setup` installs the **pinned** toolchain the build expects
-(`arduino:avr` core plus the `Firmata`, `Servo`, and `Ethernet` libraries — exact
+(`arduino:avr` core plus the `Firmata`, `Servo`, and `Ethernet` libraries; exact
 versions live in the `Makefile`, shared verbatim with CI). It also installs
 `arduino-cli` itself via Homebrew if missing:
 
@@ -65,10 +122,10 @@ make firmware-setup
 make firmware
 ```
 
-**Important — firmware is a CI/Linux artifact.** The bundled `.hex` are not
+**Important: firmware is a CI/Linux artifact.** The bundled `.hex` are not
 byte-reproducible across operating systems: the `avr-gcc` in the `arduino:avr`
 core differs between macOS and Linux, so a macOS build will not match the
-Linux build CI verifies against — even with identical pinned versions. So the
+Linux build CI verifies against, even with identical pinned versions. So the
 committed images must come from Linux. Do **not** commit locally-built firmware;
 regenerate it in CI instead:
 
@@ -79,7 +136,3 @@ make actions workflow-firmware   # runs the Firmware workflow (workflow_dispatch
 The `regenerate` job compiles on Linux and pushes a `firmware/rebuild` branch (it
 opens a PR too if the repo allows Actions to create PRs). The `verify` job fails a
 push/PR whose bundled firmware is out of date.
-
-Coding standards and guardrails for contributors (and AI agents) live in
-[`AGENTS.md`](../AGENTS.md). Architecture details are in
-[`docs/ARCHITECTURE.md`](ARCHITECTURE.md).
